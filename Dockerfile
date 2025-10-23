@@ -14,6 +14,7 @@ RUN apt-get update && apt-get install -y \
     libpq-dev \
     zip \
     unzip \
+    gettext-base \
     && docker-php-ext-install pdo pdo_pgsql pgsql mbstring \
     && docker-php-ext-enable pdo_pgsql \
     && rm -rf /var/lib/apt/lists/*
@@ -30,30 +31,46 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction
 # Copy application files
 COPY . .
 
+# Copy and make startup script executable
+COPY start.sh /usr/local/bin/start.sh
+RUN chmod +x /usr/local/bin/start.sh
+
 # Set proper permissions for storage directories
 RUN mkdir -p storage/cache storage/doctrine \
     && chown -R www-data:www-data storage \
     && chmod -R 755 storage
 
 # Configure Apache
+RUN a2enmod rewrite
 
-# Serve the app from /public
-ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
+# Create a proper virtual host configuration
+RUN echo '<VirtualHost *:${PORT}>' > /etc/apache2/sites-available/000-default.conf \
+    && echo '    ServerAdmin webmaster@localhost' >> /etc/apache2/sites-available/000-default.conf \
+    && echo '    DocumentRoot /var/www/html/public' >> /etc/apache2/sites-available/000-default.conf \
+    && echo '    <Directory /var/www/html/public>' >> /etc/apache2/sites-available/000-default.conf \
+    && echo '        AllowOverride All' >> /etc/apache2/sites-available/000-default.conf \
+    && echo '        Require all granted' >> /etc/apache2/sites-available/000-default.conf \
+    && echo '        Options -Indexes' >> /etc/apache2/sites-available/000-default.conf \
+    && echo '    </Directory>' >> /etc/apache2/sites-available/000-default.conf \
+    && echo '    ErrorLog ${APACHE_LOG_DIR}/error.log' >> /etc/apache2/sites-available/000-default.conf \
+    && echo '    CustomLog ${APACHE_LOG_DIR}/access.log combined' >> /etc/apache2/sites-available/000-default.conf \
+    && echo '</VirtualHost>' >> /etc/apache2/sites-available/000-default.conf
 
-# Enable rewrite and update all Apache confs to use the new docroot
-RUN a2enmod rewrite \
- && sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' \
-      /etc/apache2/sites-available/*.conf /etc/apache2/conf-available/*.conf \
- # ensure the <Directory> allows .htaccess in /public
- && printf "\n<Directory ${APACHE_DOCUMENT_ROOT}>\n  AllowOverride All\n  Require all granted\n</Directory>\n" \
-      >> /etc/apache2/apache2.conf \
- # silence ServerName warning and bind to Render's dynamic port
- && echo "ServerName localhost" >> /etc/apache2/apache2.conf
+# Update ports.conf to use dynamic port
+RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
 # Dynamic port for PaaS (Render)
 ENV PORT=10000
 EXPOSE ${PORT}
-RUN sed -i "s/Listen 80/Listen ${PORT}/" /etc/apache2/ports.conf
 
-CMD ["apache2-foreground"]
+# Update ports.conf to listen on the dynamic port
+RUN sed -i "s/Listen 80/Listen \${PORT}/" /etc/apache2/ports.conf
 
+# Create .htaccess file for routing
+RUN echo "RewriteEngine On" > public/.htaccess \
+    && echo "RewriteCond %{REQUEST_FILENAME} !-f" >> public/.htaccess \
+    && echo "RewriteCond %{REQUEST_FILENAME} !-d" >> public/.htaccess \
+    && echo "RewriteRule ^(.*)$ index.php [QSA,L]" >> public/.htaccess
+
+# Start Apache with environment variable substitution
+CMD ["/usr/local/bin/start.sh"]
