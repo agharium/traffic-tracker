@@ -8,16 +8,19 @@ use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 
 function createEntityManager(): EntityManager
 {
-    // Cache configuration
-    $isDevMode = ($_ENV['APP_DEBUG'] ?? 'true') === 'true';
-    $cache = $isDevMode ? new ArrayAdapter() : new FilesystemAdapter('', 0, __DIR__ . '/../storage/doctrine');
+    // Cache configuration - use ArrayAdapter for both dev and prod to avoid file issues
+    $cache = new ArrayAdapter();
     
     // Entity configuration
     $paths = [__DIR__ . '/../app/Entities'];
+    
+    // Force dev mode to prevent proxy generation
+    $isDevMode = true;
     $config = ORMSetup::createAttributeMetadataConfiguration($paths, $isDevMode, null, $cache);
     
-    // Disable proxy generation in production to avoid file system issues
+    // Explicitly disable proxy generation
     $config->setAutoGenerateProxyClasses(false);
+    $config->setProxyNamespace('DoctrineProxies');
     
     // Connection configuration
     $connectionParams = [
