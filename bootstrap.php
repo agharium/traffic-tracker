@@ -15,6 +15,29 @@ if (file_exists(__DIR__ . '/.env')) {
 // Basic settings
 date_default_timezone_set($_ENV['APP_TIMEZONE'] ?? 'America/Sao_Paulo');
 
+// Handle CORS for API routes before any routing
+if (strpos($_SERVER['REQUEST_URI'] ?? '', '/api/') !== false) {
+    $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+    
+    if (!empty($origin)) {
+        header("Access-Control-Allow-Origin: {$origin}");
+    } else {
+        header("Access-Control-Allow-Origin: *");
+    }
+    
+    header('Access-Control-Allow-Credentials: false');
+    header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+    header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, Accept, Origin');
+    header('Access-Control-Max-Age: 86400');
+    
+    // Handle preflight OPTIONS requests immediately
+    if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+        http_response_code(204);
+        header('Content-Length: 0');
+        exit();
+    }
+}
+
 // BladeOne setup
 $views = __DIR__ . '/app/Views';
 $cache = __DIR__ . '/storage/cache';
