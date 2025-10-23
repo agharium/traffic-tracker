@@ -41,8 +41,8 @@ The dashboard provides comprehensive analytics including:
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/traffic-tracker-v2.git
-   cd traffic-tracker-v2
+   git clone https://github.com/yourusername/traffic-tracker.git
+   cd traffic-tracker
    ```
 
 2. **Install dependencies**
@@ -76,7 +76,7 @@ The dashboard provides comprehensive analytics including:
 ### Default Admin Account
 - **Email**: admin@example.com
 - **Username**: admin
-- **Password**: admin123
+- **Password**: admin
 
 ## 📝 Usage
 
