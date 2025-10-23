@@ -73,46 +73,80 @@ class TrafficLogRepository extends EntityRepository
      */
     public function logAllVisits(string $ipAddress, string $pageUrl, ?string $userAgent = null, ?string $referer = null, ?string $clientId = null, ?string $websiteDomain = null, ?string $apiKey = null): TrafficLog
     {
+        error_log("REPO STEP 1: Starting logAllVisits");
+        error_log("Parameters - IP: $ipAddress, Page: $pageUrl, API: " . ($apiKey ?? 'null'));
+        
         // Find website by API key if provided
         $website = null;
         if ($apiKey) {
+            error_log("REPO STEP 2: Looking for website by API key");
             $websiteRepo = $this->getEntityManager()->getRepository(Website::class);
             $website = $websiteRepo->findOneBy(['api_key' => $apiKey]);
+            error_log("Website found by API key: " . ($website ? $website->getDomain() : 'null'));
         }
         
         // If no website found by API key, try to find by domain
         if (!$website && $websiteDomain) {
+            error_log("REPO STEP 3: Looking for website by domain");
             $websiteRepo = $this->getEntityManager()->getRepository(Website::class);
             $website = $websiteRepo->findOneBy(['domain' => $websiteDomain]);
+            error_log("Website found by domain: " . ($website ? $website->getDomain() : 'null'));
         }
         
         // If still no website found, skip logging
         if (!$website) {
+            error_log("REPO ERROR: No website found");
+            error_log("No website found for API key: " . ($apiKey ?? 'null') . " or domain: " . ($websiteDomain ?? 'null'));
             throw new \Exception('No website found for tracking');
         }
 
+        error_log("REPO STEP 4: Creating TrafficLog entity");
         // Generate session hash for uniqueness calculation later
         $sessionHash = hash('sha256', $ipAddress . ($userAgent ?? '') . date('Y-m-d'));
         
         // Create new visit log - log every visit
         $log = new TrafficLog();
-        $log->setWebsite($website)
-            ->setIpAddress($ipAddress)
-            ->setPageUrl($pageUrl)
-            ->setUserAgent($userAgent)
-            ->setReferer($referer)
-            ->setClientId($clientId)
-            ->setWebsiteDomain($website->getDomain());
+        
+        error_log("REPO STEP 5: Setting TrafficLog properties");
+        try {
+            $log->setWebsite($website)
+                ->setIpAddress($ipAddress)
+                ->setPageUrl($pageUrl)
+                ->setUserAgent($userAgent)
+                ->setReferer($referer)
+                ->setClientId($clientId)
+                ->setWebsiteDomain($website->getDomain());
+            error_log("REPO STEP 6: Basic properties set successfully");
+        } catch (\Exception $e) {
+            error_log("REPO ERROR setting properties: " . $e->getMessage());
+            throw $e;
+        }
 
         // Manually set the session hash
-        $reflection = new \ReflectionClass($log);
-        $sessionHashProperty = $reflection->getProperty('session_hash');
-        $sessionHashProperty->setAccessible(true);
-        $sessionHashProperty->setValue($log, $sessionHash);
+        error_log("REPO STEP 7: Setting session hash via reflection");
+        try {
+            $reflection = new \ReflectionClass($log);
+            $sessionHashProperty = $reflection->getProperty('session_hash');
+            $sessionHashProperty->setAccessible(true);
+            $sessionHashProperty->setValue($log, $sessionHash);
+            error_log("REPO STEP 8: Session hash set successfully");
+        } catch (\Exception $e) {
+            error_log("REPO ERROR setting session hash: " . $e->getMessage());
+            throw $e;
+        }
 
-        $this->getEntityManager()->persist($log);
-        $this->getEntityManager()->flush();
+        error_log("REPO STEP 9: Persisting to database");
+        try {
+            $this->getEntityManager()->persist($log);
+            error_log("REPO STEP 10: Entity persisted, now flushing");
+            $this->getEntityManager()->flush();
+            error_log("REPO STEP 11: Database flush successful");
+        } catch (\Exception $e) {
+            error_log("REPO ERROR persisting/flushing: " . $e->getMessage());
+            throw $e;
+        }
 
+        error_log("REPO SUCCESS: Visit logged with ID: " . $log->getId());
         return $log;
     }
 

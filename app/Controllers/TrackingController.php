@@ -25,20 +25,35 @@ class TrackingController
         header('Content-Type: application/json');
 
         try {
-            // Get data from request
+            // Step 1: Get request data
+            error_log("STEP 1: Getting request data");
             $input = json_decode(file_get_contents('php://input'), true);
+            error_log("Raw input: " . print_r($input, true));
             
             $pageUrl = $input['page_url'] ?? $_SERVER['REQUEST_URI'] ?? '/';
             $clientId = $input['client_id'] ?? null;
             $websiteDomain = $input['website_domain'] ?? $_SERVER['HTTP_HOST'] ?? null;
             $apiKey = $input['api_key'] ?? $_GET['key'] ?? null;
             
-            // Get client info
+            // Debug logging
+            error_log("STEP 2: Parsed data");
+            error_log("API Key: " . ($apiKey ?? 'null'));
+            error_log("Website Domain: " . ($websiteDomain ?? 'null'));
+            error_log("Page URL: " . ($pageUrl ?? 'null'));
+            error_log("Client ID: " . ($clientId ?? 'null'));
+            
+            // Step 3: Get client info
+            error_log("STEP 3: Getting client info");
             $ipAddress = $this->getRealIpAddr();
             $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? null;
             $referer = $_SERVER['HTTP_REFERER'] ?? $input['referer'] ?? null;
+            
+            error_log("IP Address: " . $ipAddress);
+            error_log("User Agent: " . ($userAgent ?? 'null'));
+            error_log("Referer: " . ($referer ?? 'null'));
 
-            // Log every visit without uniqueness check
+            // Step 4: Call repository
+            error_log("STEP 4: Calling logAllVisits");
             $visit = $this->trafficRepo->logAllVisits(
                 $ipAddress,
                 $pageUrl,
@@ -48,6 +63,8 @@ class TrackingController
                 $websiteDomain,
                 $apiKey
             );
+            
+            error_log("STEP 5: Visit logged successfully with ID: " . $visit->getId());
 
             echo json_encode([
                 'success' => true,
@@ -56,10 +73,19 @@ class TrackingController
             ]);
 
         } catch (\Exception $e) {
+            error_log("ERROR at step: " . $e->getMessage());
+            error_log("Error file: " . $e->getFile());
+            error_log("Error line: " . $e->getLine());
+            error_log("Stack trace: " . $e->getTraceAsString());
             http_response_code(500);
             echo json_encode([
                 'success' => false,
-                'error' => 'Failed to log visit'
+                'error' => 'Failed to log visit: ' . $e->getMessage(),
+                'debug' => [
+                    'message' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine()
+                ]
             ]);
         }
     }
@@ -116,13 +142,21 @@ class TrackingController
                         data.client_id = this.clientId;
                         data.api_key = this.apiKey;
                         
+                        console.log('Tracking data:', data);
+                        console.log('Sending to:', this.baseUrl + '/api/track');
+                        
                         fetch(this.baseUrl + '/api/track', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
                             },
                             body: JSON.stringify(data)
-                        }).catch(function(error) {
+                        })
+                        .then(response => response.json())
+                        .then(result => {
+                            console.log('Tracking response:', result);
+                        })
+                        .catch(function(error) {
                             console.warn('Traffic tracking failed:', error);
                         });
                     },
@@ -161,6 +195,32 @@ class TrackingController
                 }
             })();
         ";
+    }
+
+    /**
+     * Test endpoint to debug tracking issues
+     * GET /api/test-track
+     */
+    public function testTrack()
+    {
+        header('Content-Type: application/json');
+        
+        try {
+            $apiKey = 'tk_eb0aae23640af952f00018c4d438f9326aad9adb5c0069bfe43a4a42';
+            
+            echo json_encode([
+                'success' => true,
+                'message' => 'Test endpoint working',
+                'api_key' => $apiKey,
+                'timestamp' => date('Y-m-d H:i:s')
+            ]);
+            
+        } catch (\Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
     }
 
     /**

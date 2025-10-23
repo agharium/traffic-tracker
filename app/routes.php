@@ -100,6 +100,13 @@ Flight::route('GET /api/tracking-script', function() {
     $controller->trackingScript();
 });
 
+// Test endpoint
+Flight::route('GET /api/test-track', function() {
+    CorsMiddleware::handle();
+    $controller = new TrackingController();
+    $controller->testTrack();
+});
+
 // Generate sample data route (for testing)
 Flight::route('GET /generate-sample-data', function() {
     AuthMiddleware::requireAuth();
