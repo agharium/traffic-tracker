@@ -1,0 +1,21 @@
+# Environment Configuration
+.env
+.env.local
+
+# Composer Dependencies
+/vendor/
+
+# IDE and Editor Files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS Generated Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs and Cache
+*.log
+/storage/
