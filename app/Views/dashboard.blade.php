@@ -2,10 +2,23 @@
 
 @section('content')
 <div class="space-y-6">
-    <!-- Header with period selector -->
+    <!-- Header with website and period selector -->
     <div class="flex justify-between items-center">
         <h1 class="text-3xl font-bold">Traffic Dashboard</h1>
         <div class="flex gap-2">
+            <!-- Website Selector -->
+            <select id="websiteSelector" class="select select-bordered" onchange="updateWebsite()">
+                <option value="all" {{ ($selected_website_id ?? 'all') == 'all' ? 'selected' : '' }}>All Websites</option>
+                @if(isset($websites))
+                    @foreach($websites as $website)
+                        <option value="{{ $website->getId() }}" {{ ($selected_website_id ?? 'all') == $website->getId() ? 'selected' : '' }}>
+                            {{ $website->getName() }} ({{ $website->getDomain() }})
+                        </option>
+                    @endforeach
+                @endif
+            </select>
+            
+            <!-- Period Selector -->
             <select id="periodSelector" class="select select-bordered" onchange="updatePeriod()">
                 <option value="7" {{ ($selected_period ?? 30) == 7 ? 'selected' : '' }}>Last 7 days</option>
                 <option value="30" {{ ($selected_period ?? 30) == 30 ? 'selected' : '' }}>Last 30 days</option>
@@ -13,6 +26,23 @@
             </select>
         </div>
     </div>
+
+    <!-- Selected Website Info -->
+    @if(isset($selected_website) && $selected_website)
+        <div class="alert alert-info">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span>Showing data for: <strong>{{ $selected_website->getName() }}</strong> ({{ $selected_website->getDomain() }})</span>
+        </div>
+    @elseif(isset($websites) && count($websites) > 1)
+        <div class="alert alert-info">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span>Showing combined data for <strong>{{ count($websites) }} websites</strong></span>
+        </div>
+    @endif
 
     <!-- Stats Cards -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
@@ -184,8 +214,24 @@
 <script>
 function updatePeriod() {
     const days = document.getElementById('periodSelector').value;
-    // Simple page reload with new period parameter
-    window.location.href = `/dashboard?days=${days}`;
+    const websiteId = document.getElementById('websiteSelector').value;
+    // Preserve current website selection when updating period
+    let url = `/dashboard?days=${days}`;
+    if (websiteId !== 'all') {
+        url += `&website_id=${websiteId}`;
+    }
+    window.location.href = url;
+}
+
+function updateWebsite() {
+    const websiteId = document.getElementById('websiteSelector').value;
+    const days = document.getElementById('periodSelector').value;
+    // Preserve current period when updating website selection
+    let url = `/dashboard?days=${days}`;
+    if (websiteId !== 'all') {
+        url += `&website_id=${websiteId}`;
+    }
+    window.location.href = url;
 }
 </script>
 @endsection

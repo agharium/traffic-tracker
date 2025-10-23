@@ -2,31 +2,61 @@
 namespace App\Controllers;
 
 use App\Repositories\TrafficLogRepository;
+use App\Repositories\WebsiteRepository;
+use App\Repositories\UserRepository;
 use DateTime;
 
 class DashboardController {
     private TrafficLogRepository $trafficRepo;
+    private WebsiteRepository $websiteRepo;
+    private UserRepository $userRepo;
 
     public function __construct()
     {
         $em = em();
         $this->trafficRepo = new TrafficLogRepository($em);
+        $this->websiteRepo = new WebsiteRepository($em);
+        $this->userRepo = new UserRepository($em);
     }
 
     public function index() {
+        $userId = $_SESSION['user_id'] ?? null;
+        $user = $this->userRepo->find($userId);
+        
+        if (!$user || !$userId) {
+            header('Location: /login');
+            exit;
+        }
+
+        // Get user's websites
+        $websites = $this->websiteRepo->findByUser($user);
+        
+        // Get selected website ID (default to first website or 'all')
+        $selectedWebsiteId = $_GET['website_id'] ?? 'all';
+        $selectedWebsite = null;
+        
+        if ($selectedWebsiteId !== 'all') {
+            $selectedWebsite = $this->websiteRepo->find($selectedWebsiteId);
+            // Ensure user owns this website
+            if (!$selectedWebsite || $selectedWebsite->getUser()->getId() !== $userId) {
+                $selectedWebsiteId = 'all';
+                $selectedWebsite = null;
+            }
+        }
+        
         // Load all data at once
         $days = $_GET['days'] ?? 30; // Get from URL parameter
         $endDate = new DateTime();
         $startDate = new DateTime("-{$days} days");
         
-        // Get all stats with both total and unique counts
-        $totalVisits = $this->trafficRepo->getTotalVisits($startDate, $endDate);
-        $totalUniqueVisitors = $this->trafficRepo->getTotalUniqueVisitors($startDate, $endDate);
-        $topPages = $this->trafficRepo->getVisitsByPageWithStats($startDate, $endDate);
-        $topReferrers = $this->trafficRepo->getTopReferrers($startDate, $endDate, 5);
+        // Get all stats with both total and unique counts (filtered by website if selected)
+        $totalVisits = $this->trafficRepo->getTotalVisits($startDate, $endDate, $selectedWebsite);
+        $totalUniqueVisitors = $this->trafficRepo->getTotalUniqueVisitors($startDate, $endDate, $selectedWebsite);
+        $topPages = $this->trafficRepo->getVisitsByPageWithStats($startDate, $endDate, $selectedWebsite);
+        $topReferrers = $this->trafficRepo->getTopReferrers($startDate, $endDate, 5, $selectedWebsite);
         
         // Get chart data with both total and unique visits
-        $chartData = $this->trafficRepo->getVisitsByDayWithStats($startDate, $endDate);
+        $chartData = $this->trafficRepo->getVisitsByDayWithStats($startDate, $endDate, $selectedWebsite);
         $labels = [];
         $totalValues = [];
         $uniqueValues = [];
@@ -50,6 +80,9 @@ class DashboardController {
         
         view('dashboard', [
             'title' => 'Dashboard',
+            'websites' => $websites,
+            'selected_website_id' => $selectedWebsiteId,
+            'selected_website' => $selectedWebsite,
             'total_visits' => $totalVisits,
             'total_visitors' => $totalUniqueVisitors,
             'top_pages' => $topPages,
@@ -65,12 +98,32 @@ class DashboardController {
     }
     
     public function chart() {
+        $userId = $_SESSION['user_id'] ?? null;
+        $user = $this->userRepo->find($userId);
+        
+        if (!$user || !$userId) {
+            header('Location: /login');
+            exit;
+        }
+
+        // Get selected website if provided
+        $selectedWebsiteId = $_GET['website_id'] ?? 'all';
+        $selectedWebsite = null;
+        
+        if ($selectedWebsiteId !== 'all') {
+            $selectedWebsite = $this->websiteRepo->find($selectedWebsiteId);
+            // Ensure user owns this website
+            if (!$selectedWebsite || $selectedWebsite->getUser()->getId() !== $userId) {
+                $selectedWebsite = null;
+            }
+        }
+
         // Get data for the selected period (default: last 7 days)
         $days = $_GET['days'] ?? 7;
         $endDate = new DateTime();
         $startDate = new DateTime("-{$days} days");
         
-        $data = $this->trafficRepo->getUniqueVisitsByDay($startDate, $endDate);
+        $data = $this->trafficRepo->getUniqueVisitsByDay($startDate, $endDate, $selectedWebsite);
         
         $labels = [];
         $values = [];
@@ -96,12 +149,32 @@ class DashboardController {
     }
     
     public function table() {
+        $userId = $_SESSION['user_id'] ?? null;
+        $user = $this->userRepo->find($userId);
+        
+        if (!$user || !$userId) {
+            header('Location: /login');
+            exit;
+        }
+
+        // Get selected website if provided
+        $selectedWebsiteId = $_GET['website_id'] ?? 'all';
+        $selectedWebsite = null;
+        
+        if ($selectedWebsiteId !== 'all') {
+            $selectedWebsite = $this->websiteRepo->find($selectedWebsiteId);
+            // Ensure user owns this website
+            if (!$selectedWebsite || $selectedWebsite->getUser()->getId() !== $userId) {
+                $selectedWebsite = null;
+            }
+        }
+
         // Get data for the selected time period (default: last 30 days)
         $days = $_GET['days'] ?? 30;
         $endDate = new DateTime();
         $startDate = new DateTime("-{$days} days");
         
-        $rows = $this->trafficRepo->getUniqueVisitsByPage($startDate, $endDate);
+        $rows = $this->trafficRepo->getUniqueVisitsByPage($startDate, $endDate, $selectedWebsite);
         
         // If no data, show empty state
         if (empty($rows)) {
@@ -112,6 +185,26 @@ class DashboardController {
     }
 
     public function stats() {
+        $userId = $_SESSION['user_id'] ?? null;
+        $user = $this->userRepo->find($userId);
+        
+        if (!$user || !$userId) {
+            header('Location: /login');
+            exit;
+        }
+
+        // Get selected website if provided
+        $selectedWebsiteId = $_GET['website_id'] ?? 'all';
+        $selectedWebsite = null;
+        
+        if ($selectedWebsiteId !== 'all') {
+            $selectedWebsite = $this->websiteRepo->find($selectedWebsiteId);
+            // Ensure user owns this website
+            if (!$selectedWebsite || $selectedWebsite->getUser()->getId() !== $userId) {
+                $selectedWebsite = null;
+            }
+        }
+
         // Get period from query params
         $days = $_GET['days'] ?? 30;
         $type = $_GET['type'] ?? 'all';
@@ -119,9 +212,9 @@ class DashboardController {
         $startDate = new DateTime("-{$days} days");
 
         // Get statistics
-        $totalVisitors = $this->trafficRepo->getTotalUniqueVisitors($startDate, $endDate);
-        $topPages = $this->trafficRepo->getUniqueVisitsByPage($startDate, $endDate);
-        $topReferrers = $this->trafficRepo->getTopReferrers($startDate, $endDate, 5);
+        $totalVisitors = $this->trafficRepo->getTotalUniqueVisitors($startDate, $endDate, $selectedWebsite);
+        $topPages = $this->trafficRepo->getUniqueVisitsByPage($startDate, $endDate, $selectedWebsite);
+        $topReferrers = $this->trafficRepo->getTopReferrers($startDate, $endDate, 5, $selectedWebsite);
         
         $data = [
             'total_visitors' => $totalVisitors,
