@@ -36,8 +36,12 @@ function createEntityManager(): EntityManager
     $config->setProxyDir($proxyDir);
     $config->setProxyNamespace('Proxies');
     
-    // Disable auto-generation in production to prevent file system issues  
-    $config->setAutoGenerateProxyClasses($isDevMode ? 1 : 0);
+    // Disable auto-generation completely in production
+    if ($isDevMode) {
+        $config->setAutoGenerateProxyClasses(true);
+    } else {
+        $config->setAutoGenerateProxyClasses(false);
+    }
     
     // Connection configuration
     $connectionParams = [

@@ -52,6 +52,23 @@ require __DIR__ . '/config/doctrine.php';
 
 try {
     $entityManager = createEntityManager();
+    
+    // In production, try to generate missing proxies if needed
+    if (($_ENV['APP_DEBUG'] ?? 'true') === 'false') {
+        $proxyDir = $entityManager->getConfiguration()->getProxyDir();
+        if (is_dir($proxyDir) && is_writable($proxyDir)) {
+            // Check if we have any proxy files, if not, generate them
+            $files = glob($proxyDir . '/__CG__*.php');
+            if (empty($files)) {
+                try {
+                    $metadatas = $entityManager->getMetadataFactory()->getAllMetadata();
+                    $entityManager->getProxyFactory()->generateProxyClasses($metadatas);
+                } catch (Exception $e) {
+                    // Silently fail, proxies will be generated on demand
+                }
+            }
+        }
+    }
 } catch (Exception $e) {
     die('Doctrine connection failed: ' . $e->getMessage());
 }

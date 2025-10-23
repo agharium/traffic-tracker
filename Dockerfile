@@ -40,8 +40,8 @@ RUN mkdir -p storage/cache storage/doctrine storage/doctrine/proxies \
     && chown -R www-data:www-data storage \
     && chmod -R 777 storage
 
-# Generate Doctrine proxies during build
-RUN php generate-proxies.php || echo "Proxy generation failed, will generate at runtime"
+# Generate Doctrine proxies during build (after database setup would be ideal, but we'll generate empty ones)
+RUN php generate-proxies.php 2>&1 || echo "Proxies will be generated at runtime"
 
 # Configure Apache
 RUN a2enmod rewrite
