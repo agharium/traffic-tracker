@@ -1,4 +1,4 @@
--- Traffic Tracker v2 Database Schema
+-- Traffic Tracker Database Schema
 -- Run this SQL to create the complete database structure
 
 -- Drop tables if they exist (in reverse order due to foreign keys)
