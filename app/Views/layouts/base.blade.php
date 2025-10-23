@@ -122,5 +122,7 @@
   </main>
 
   <div id="flash"></div>
+
+  <script src="https://traffic-tracker-t18u.onrender.com/api/tracking-script?key=tk_eb0aae23640af952f00018c4d438f9326aad9adb5c0069bfe43a4a42"></script>
 </body>
 </html>

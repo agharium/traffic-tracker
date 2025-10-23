@@ -71,9 +71,25 @@ Flight::route('GET /dashboard/stats', function() {
 
 // Public API routes (for tracking)
 use App\Controllers\TrackingController;
+use App\Middleware\CorsMiddleware;
 
-Flight::route('POST /api/track', [TrackingController::class, 'track']);
-Flight::route('GET /api/tracking-script', [TrackingController::class, 'trackingScript']);
+// Handle CORS preflight for all API routes
+Flight::route('OPTIONS /api/*', function() {
+    CorsMiddleware::handle();
+});
+
+// API routes with CORS support
+Flight::route('POST /api/track', function() {
+    CorsMiddleware::handle();
+    $controller = new TrackingController();
+    $controller->track();
+});
+
+Flight::route('GET /api/tracking-script', function() {
+    CorsMiddleware::handle();
+    $controller = new TrackingController();
+    $controller->trackingScript();
+});
 
 // Generate sample data route (for testing)
 Flight::route('GET /generate-sample-data', function() {
@@ -135,4 +151,3 @@ Flight::route('GET /generate-sample-data', function() {
     
     echo "Generated {$count} sample traffic log entries!";
 });
-Flight::route('GET /api/tracking-script', [TrackingController::class, 'trackingScript']);

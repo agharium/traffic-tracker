@@ -179,17 +179,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Tracking Script Instructions -->
-    <div class="card bg-base-100 shadow">
-        <div class="card-body">
-            <h2 class="card-title">📊 How to Track Your Website</h2>
-            <p class="mb-4">Add this script to your website to start tracking visitors:</p>
-            <div class="mockup-code">
-                <pre><code>&lt;script src="{{ $_SERVER['HTTP_HOST'] ?? 'your-domain.com' }}/api/tracking-script"&gt;&lt;/script&gt;</code></pre>
-            </div>
-        </div>
-    </div>
 </div>
 
 <script>

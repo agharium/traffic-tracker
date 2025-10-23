@@ -21,15 +21,8 @@ class TrackingController
      */
     public function track()
     {
-        // Set CORS headers for cross-origin requests
-        header('Access-Control-Allow-Origin: *');
-        header('Access-Control-Allow-Methods: POST, OPTIONS');
-        header('Access-Control-Allow-Headers: Content-Type');
+        // CORS is handled by middleware
         header('Content-Type: application/json');
-
-        if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-            exit(0);
-        }
 
         try {
             // Get data from request
@@ -77,8 +70,8 @@ class TrackingController
      */
     public function trackingScript()
     {
+        // CORS is handled by middleware
         header('Content-Type: application/javascript');
-        header('Access-Control-Allow-Origin: *');
 
         $apiKey = $_GET['key'] ?? '';
         $baseUrl = 'http' . (isset($_SERVER['HTTPS']) ? 's' : '') . '://' . $_SERVER['HTTP_HOST'];
