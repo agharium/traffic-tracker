@@ -6,28 +6,6 @@ use Doctrine\ORM\EntityManager;
 // Composer autoload
 require __DIR__ . '/vendor/autoload.php';
 
-// Handle CORS early for API requests
-if (strpos($_SERVER['REQUEST_URI'] ?? '', '/api/') === 0) {
-    $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-    
-    if ($origin) {
-        header("Access-Control-Allow-Origin: {$origin}");
-    } else {
-        header("Access-Control-Allow-Origin: *");
-    }
-    
-    header('Access-Control-Allow-Credentials: true');
-    header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-    header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, Accept, Origin');
-    header('Access-Control-Max-Age: 86400');
-    
-    if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-        http_response_code(204);
-        header('Content-Length: 0');
-        exit();
-    }
-}
-
 // Load environment
 if (file_exists(__DIR__ . '/.env')) {
     $dotenv = Dotenv::createImmutable(__DIR__);
@@ -36,8 +14,6 @@ if (file_exists(__DIR__ . '/.env')) {
 
 // Basic settings
 date_default_timezone_set($_ENV['APP_TIMEZONE'] ?? 'America/Sao_Paulo');
-error_reporting(E_ALL);
-ini_set('display_errors', (($_ENV['APP_DEBUG'] ?? 'true') === 'true') ? '1' : '0');
 
 // BladeOne setup
 $views = __DIR__ . '/app/Views';
@@ -52,23 +28,6 @@ require __DIR__ . '/config/doctrine.php';
 
 try {
     $entityManager = createEntityManager();
-    
-    // In production, try to generate missing proxies if needed
-    if (($_ENV['APP_DEBUG'] ?? 'true') === 'false') {
-        $proxyDir = $entityManager->getConfiguration()->getProxyDir();
-        if (is_dir($proxyDir) && is_writable($proxyDir)) {
-            // Check if we have any proxy files, if not, generate them
-            $files = glob($proxyDir . '/__CG__*.php');
-            if (empty($files)) {
-                try {
-                    $metadatas = $entityManager->getMetadataFactory()->getAllMetadata();
-                    $entityManager->getProxyFactory()->generateProxyClasses($metadatas);
-                } catch (Exception $e) {
-                    // Silently fail, proxies will be generated on demand
-                }
-            }
-        }
-    }
 } catch (Exception $e) {
     die('Doctrine connection failed: ' . $e->getMessage());
 }

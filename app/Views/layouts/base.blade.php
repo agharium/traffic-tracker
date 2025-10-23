@@ -123,6 +123,12 @@
 
   <div id="flash"></div>
 
-  <script src="https://traffic-tracker-t18u.onrender.com/api/tracking-script?key=tk_eb0aae23640af952f00018c4d438f9326aad9adb5c0069bfe43a4a42"></script>
+  @if(isset($_SERVER['HTTP_HOST']) && strpos($_SERVER['HTTP_HOST'], 'localhost') === false)
+    {{-- Only load tracking script in production --}}
+    <script src="https://traffic-tracker-t18u.onrender.com/api/tracking-script?key=tk_eb0aae23640af952f00018c4d438f9326aad9adb5c0069bfe43a4a42"></script>
+  @else
+    {{-- For localhost development, use local tracking script --}}
+    <script src="http://localhost:8080/api/tracking-script?key=local_dev_key"></script>
+  @endif
 </body>
 </html>

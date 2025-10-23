@@ -69,6 +69,4 @@
     </div> --}}
 </div>
 
-<!-- Include the tracking script on this demo page -->
-<script src="/api/tracking-script"></script>
 @endsection
