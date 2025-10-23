@@ -28,11 +28,11 @@ class Website
     #[ORM\Column(type: 'datetime')]
     private DateTime $created_at;
 
-    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\ManyToOne(targetEntity: User::class, fetch: 'EAGER')]
     #[ORM\JoinColumn(name: 'user_id', referencedColumnName: 'id', nullable: false)]
     private User $user;
 
-    #[ORM\OneToMany(mappedBy: 'website', targetEntity: TrafficLog::class, cascade: ['remove'])]
+    #[ORM\OneToMany(mappedBy: 'website', targetEntity: TrafficLog::class, cascade: ['remove'], fetch: 'EXTRA_LAZY')]
     private Collection $traffic_logs;
 
     #[ORM\Column(type: 'boolean')]

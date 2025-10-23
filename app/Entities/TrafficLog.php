@@ -29,7 +29,7 @@ class TrafficLog
     #[ORM\Column(type: 'string', length: 100, nullable: true)]
     private ?string $client_id = null;
 
-    #[ORM\ManyToOne(targetEntity: Website::class, inversedBy: 'traffic_logs')]
+    #[ORM\ManyToOne(targetEntity: Website::class, inversedBy: 'traffic_logs', fetch: 'EAGER')]
     #[ORM\JoinColumn(name: 'website_id', referencedColumnName: 'id', nullable: false)]
     private Website $website;
 
