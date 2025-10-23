@@ -58,8 +58,12 @@ RUN echo "RewriteEngine On" > public/.htaccess \
     && echo "RewriteCond %{REQUEST_FILENAME} !-d" >> public/.htaccess \
     && echo "RewriteRule ^(.*)$ index.php [QSA,L]" >> public/.htaccess
 
-# Expose port 80
-EXPOSE 80
+# Expose port and set environment variable
+ENV PORT=10000
+EXPOSE ${PORT}
+
+RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf \
+    && sed -i "s/Listen 80/Listen ${PORT}/" /etc/apache2/ports.conf
 
 # Start Apache
 CMD ["apache2-foreground"]
