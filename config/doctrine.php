@@ -10,11 +10,34 @@ function createEntityManager(): EntityManager
 {
     // Cache configuration
     $isDevMode = ($_ENV['APP_DEBUG'] ?? 'true') === 'true';
+    
+    // Force production mode for Render
+    if (strpos($_SERVER['HTTP_HOST'] ?? '', 'onrender.com') !== false) {
+        $isDevMode = false;
+    }
+    
     $cache = $isDevMode ? new ArrayAdapter() : new FilesystemAdapter('', 0, __DIR__ . '/../storage/doctrine');
+    
+    // Proxy directory configuration - use absolute path
+    $proxyDir = realpath(__DIR__ . '/../storage/doctrine/proxies');
+    if (!$proxyDir || !is_dir($proxyDir)) {
+        $proxyDir = __DIR__ . '/../storage/doctrine/proxies';
+        if (!is_dir($proxyDir)) {
+            mkdir($proxyDir, 0777, true);
+        }
+        $proxyDir = realpath($proxyDir);
+    }
     
     // Entity configuration
     $paths = [__DIR__ . '/../app/Entities'];
-    $config = ORMSetup::createAttributeMetadataConfiguration($paths, $isDevMode, null, $cache);
+    $config = ORMSetup::createAttributeMetadataConfiguration($paths, $isDevMode, $proxyDir, $cache);
+    
+    // Force proxy configuration
+    $config->setProxyDir($proxyDir);
+    $config->setProxyNamespace('Proxies');
+    
+    // Disable auto-generation in production to prevent file system issues  
+    $config->setAutoGenerateProxyClasses($isDevMode ? 1 : 0);
     
     // Connection configuration
     $connectionParams = [

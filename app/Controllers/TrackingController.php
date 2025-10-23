@@ -25,35 +25,20 @@ class TrackingController
         header('Content-Type: application/json');
 
         try {
-            // Step 1: Get request data
-            error_log("STEP 1: Getting request data");
+            // Get data from request
             $input = json_decode(file_get_contents('php://input'), true);
-            error_log("Raw input: " . print_r($input, true));
             
             $pageUrl = $input['page_url'] ?? $_SERVER['REQUEST_URI'] ?? '/';
             $clientId = $input['client_id'] ?? null;
             $websiteDomain = $input['website_domain'] ?? $_SERVER['HTTP_HOST'] ?? null;
             $apiKey = $input['api_key'] ?? $_GET['key'] ?? null;
             
-            // Debug logging
-            error_log("STEP 2: Parsed data");
-            error_log("API Key: " . ($apiKey ?? 'null'));
-            error_log("Website Domain: " . ($websiteDomain ?? 'null'));
-            error_log("Page URL: " . ($pageUrl ?? 'null'));
-            error_log("Client ID: " . ($clientId ?? 'null'));
-            
-            // Step 3: Get client info
-            error_log("STEP 3: Getting client info");
+            // Get client info
             $ipAddress = $this->getRealIpAddr();
             $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? null;
             $referer = $_SERVER['HTTP_REFERER'] ?? $input['referer'] ?? null;
-            
-            error_log("IP Address: " . $ipAddress);
-            error_log("User Agent: " . ($userAgent ?? 'null'));
-            error_log("Referer: " . ($referer ?? 'null'));
 
-            // Step 4: Call repository
-            error_log("STEP 4: Calling logAllVisits");
+            // Log the visit
             $visit = $this->trafficRepo->logAllVisits(
                 $ipAddress,
                 $pageUrl,
@@ -63,8 +48,6 @@ class TrackingController
                 $websiteDomain,
                 $apiKey
             );
-            
-            error_log("STEP 5: Visit logged successfully with ID: " . $visit->getId());
 
             echo json_encode([
                 'success' => true,
@@ -73,19 +56,10 @@ class TrackingController
             ]);
 
         } catch (\Exception $e) {
-            error_log("ERROR at step: " . $e->getMessage());
-            error_log("Error file: " . $e->getFile());
-            error_log("Error line: " . $e->getLine());
-            error_log("Stack trace: " . $e->getTraceAsString());
             http_response_code(500);
             echo json_encode([
                 'success' => false,
-                'error' => 'Failed to log visit: ' . $e->getMessage(),
-                'debug' => [
-                    'message' => $e->getMessage(),
-                    'file' => $e->getFile(),
-                    'line' => $e->getLine()
-                ]
+                'error' => 'Failed to log visit: ' . $e->getMessage()
             ]);
         }
     }
@@ -134,7 +108,7 @@ class TrackingController
                         this.track({
                             page_url: window.location.pathname + window.location.search,
                             referer: document.referrer,
-                            website_domain: window.location.hostname
+                            website_domain: '{$_SERVER['HTTP_HOST']}'
                         });
                     },
                     

@@ -36,9 +36,12 @@ COPY start.sh /usr/local/bin/start.sh
 RUN chmod +x /usr/local/bin/start.sh
 
 # Set proper permissions for storage directories
-RUN mkdir -p storage/cache storage/doctrine \
+RUN mkdir -p storage/cache storage/doctrine storage/doctrine/proxies \
     && chown -R www-data:www-data storage \
-    && chmod -R 755 storage
+    && chmod -R 777 storage
+
+# Generate Doctrine proxies during build
+RUN php generate-proxies.php || echo "Proxy generation failed, will generate at runtime"
 
 # Configure Apache
 RUN a2enmod rewrite
