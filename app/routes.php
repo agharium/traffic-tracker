@@ -3,11 +3,18 @@ use App\Controllers\HomeController;
 use App\Controllers\DashboardController;
 use App\Controllers\AuthController;
 use App\Middleware\AuthMiddleware;
+use App\Controllers\TrackingController;
+use App\Middleware\CorsMiddleware;
 
 // Start session for authentication
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
+
+// Global CORS handler for all API routes
+Flight::route('OPTIONS /api/*', function() {
+    CorsMiddleware::handle();
+});
 
 // Authentication routes (guest only)
 Flight::route('GET /login', [AuthController::class, 'showLogin']);
@@ -70,22 +77,6 @@ Flight::route('GET /dashboard/stats', function() {
 });
 
 // Public API routes (for tracking)
-use App\Controllers\TrackingController;
-use App\Middleware\CorsMiddleware;
-
-// Handle CORS preflight for specific API routes
-Flight::route('OPTIONS /api/track', function() {
-    CorsMiddleware::handle();
-});
-
-Flight::route('OPTIONS /api/tracking-script', function() {
-    CorsMiddleware::handle();
-});
-
-// Handle CORS preflight for all other API routes
-Flight::route('OPTIONS /api/*', function() {
-    CorsMiddleware::handle();
-});
 
 // API routes with CORS support
 Flight::route('POST /api/track', function() {
