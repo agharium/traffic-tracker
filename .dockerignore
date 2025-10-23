@@ -1,0 +1,14 @@
+.git
+.gitignore
+README.md
+AUTH_README.md
+.env
+.env.example
+node_modules
+storage/cache/*
+storage/doctrine/*
+vendor
+composer.phar
+*.log
+.DS_Store
+Thumbs.db
