@@ -16,6 +16,9 @@ function createEntityManager(): EntityManager
     $paths = [__DIR__ . '/../app/Entities'];
     $config = ORMSetup::createAttributeMetadataConfiguration($paths, $isDevMode, null, $cache);
     
+    // Disable proxy generation in production to avoid file system issues
+    $config->setAutoGenerateProxyClasses(false);
+    
     // Connection configuration
     $connectionParams = [
         'dbname' => $_ENV['DB_NAME'] ?? 'tracker',
