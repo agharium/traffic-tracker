@@ -73,7 +73,16 @@ Flight::route('GET /dashboard/stats', function() {
 use App\Controllers\TrackingController;
 use App\Middleware\CorsMiddleware;
 
-// Handle CORS preflight for all API routes
+// Handle CORS preflight for specific API routes
+Flight::route('OPTIONS /api/track', function() {
+    CorsMiddleware::handle();
+});
+
+Flight::route('OPTIONS /api/tracking-script', function() {
+    CorsMiddleware::handle();
+});
+
+// Handle CORS preflight for all other API routes
 Flight::route('OPTIONS /api/*', function() {
     CorsMiddleware::handle();
 });

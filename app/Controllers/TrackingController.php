@@ -74,7 +74,12 @@ class TrackingController
         header('Content-Type: application/javascript');
 
         $apiKey = $_GET['key'] ?? '';
-        $baseUrl = 'http' . (isset($_SERVER['HTTPS']) ? 's' : '') . '://' . $_SERVER['HTTP_HOST'];
+        
+        // Force HTTPS for production (Render always uses HTTPS)
+        // Use current protocol for local development
+        $isProduction = strpos($_SERVER['HTTP_HOST'], 'onrender.com') !== false;
+        $protocol = $isProduction ? 'https' : 'http' . ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 's' : '');
+        $baseUrl = $protocol . '://' . $_SERVER['HTTP_HOST'];
 
         echo "
             (function() {

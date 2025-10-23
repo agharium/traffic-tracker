@@ -66,11 +66,11 @@ EXPOSE ${PORT}
 # Update ports.conf to listen on the dynamic port
 RUN sed -i "s/Listen 80/Listen \${PORT}/" /etc/apache2/ports.conf
 
-# Create .htaccess file for routing
-RUN echo "RewriteEngine On" > public/.htaccess \
+# Ensure .htaccess exists (if not already present)
+RUN [ ! -f public/.htaccess ] && echo "RewriteEngine On" > public/.htaccess \
     && echo "RewriteCond %{REQUEST_FILENAME} !-f" >> public/.htaccess \
     && echo "RewriteCond %{REQUEST_FILENAME} !-d" >> public/.htaccess \
-    && echo "RewriteRule ^(.*)$ index.php [QSA,L]" >> public/.htaccess
+    && echo "RewriteRule ^(.*)$ index.php [QSA,L]" >> public/.htaccess || true
 
 # Start Apache with environment variable substitution
 CMD ["/usr/local/bin/start.sh"]
