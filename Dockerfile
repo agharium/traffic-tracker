@@ -36,34 +36,24 @@ RUN mkdir -p storage/cache storage/doctrine \
     && chmod -R 755 storage
 
 # Configure Apache
-RUN a2enmod rewrite
-COPY <<EOF /etc/apache2/sites-available/000-default.conf
-<VirtualHost *:80>
-    ServerAdmin webmaster@localhost
-    DocumentRoot /var/www/html/public
-    
-    <Directory /var/www/html/public>
-        AllowOverride All
-        Require all granted
-    </Directory>
-    
-    ErrorLog \${APACHE_LOG_DIR}/error.log
-    CustomLog \${APACHE_LOG_DIR}/access.log combined
-</VirtualHost>
-EOF
 
-# Create .htaccess file for routing
-RUN echo "RewriteEngine On" > public/.htaccess \
-    && echo "RewriteCond %{REQUEST_FILENAME} !-f" >> public/.htaccess \
-    && echo "RewriteCond %{REQUEST_FILENAME} !-d" >> public/.htaccess \
-    && echo "RewriteRule ^(.*)$ index.php [QSA,L]" >> public/.htaccess
+# Serve the app from /public
+ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
 
-# Expose port and set environment variable
+# Enable rewrite and update all Apache confs to use the new docroot
+RUN a2enmod rewrite \
+ && sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' \
+      /etc/apache2/sites-available/*.conf /etc/apache2/conf-available/*.conf \
+ # ensure the <Directory> allows .htaccess in /public
+ && printf "\n<Directory ${APACHE_DOCUMENT_ROOT}>\n  AllowOverride All\n  Require all granted\n</Directory>\n" \
+      >> /etc/apache2/apache2.conf \
+ # silence ServerName warning and bind to Render's dynamic port
+ && echo "ServerName localhost" >> /etc/apache2/apache2.conf
+
+# Dynamic port for PaaS (Render)
 ENV PORT=10000
 EXPOSE ${PORT}
+RUN sed -i "s/Listen 80/Listen ${PORT}/" /etc/apache2/ports.conf
 
-RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf \
-    && sed -i "s/Listen 80/Listen ${PORT}/" /etc/apache2/ports.conf
-
-# Start Apache
 CMD ["apache2-foreground"]
+
