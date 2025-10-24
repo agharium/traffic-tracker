@@ -5,6 +5,9 @@ namespace App\Controllers;
 use App\Repositories\TrafficLogRepository;
 use DateTime;
 
+/**
+ * Controller for handling tracking-related API endpoints
+ */
 class TrackingController
 {
     private TrafficLogRepository $trafficRepo;

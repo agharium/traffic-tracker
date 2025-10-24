@@ -6,6 +6,9 @@ use App\Services\AuthService;
 use App\Middleware\AuthMiddleware;
 use Flight;
 
+/**
+ * Controller for handling authentication-related requests
+ */
 class AuthController
 {
     private AuthService $authService;

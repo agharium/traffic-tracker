@@ -6,6 +6,9 @@ use App\Repositories\WebsiteRepository;
 use App\Repositories\UserRepository;
 use DateTime;
 
+/**
+ * Controller for handling dashboard-related requests
+ */
 class DashboardController {
     private TrafficLogRepository $trafficRepo;
     private WebsiteRepository $websiteRepo;
@@ -45,9 +48,22 @@ class DashboardController {
         }
         
         // Load all data at once
-        $days = $_GET['days'] ?? 30; // Get from URL parameter
-        $endDate = new DateTime();
-        $startDate = new DateTime("-{$days} days");
+        $days = $_GET['days'] ?? 1; // Changed default to 1 (Today)
+        
+        // Handle special cases for calendar days
+        if ($days == 1) {
+            // Today: from midnight to end of day
+            $startDate = new DateTime('today'); // Start of today (00:00:00)
+            $endDate = new DateTime('tomorrow'); // Start of tomorrow (00:00:00)
+        } elseif ($days == 2) {
+            // Yesterday: from yesterday midnight to yesterday end of day
+            $startDate = new DateTime('yesterday'); // Start of yesterday (00:00:00)
+            $endDate = new DateTime('today'); // Start of today (00:00:00)
+        } else {
+            // Other periods: X days ago to now (rolling window)
+            $endDate = new DateTime();
+            $startDate = new DateTime("-{$days} days");
+        }
         
         // Get all stats with both total and unique counts (filtered by website if selected)
         $totalVisits = $this->trafficRepo->getTotalVisits($startDate, $endDate, $selectedWebsite);
@@ -56,26 +72,84 @@ class DashboardController {
         $topReferrers = $this->trafficRepo->getTopReferrers($startDate, $endDate, 5, $selectedWebsite);
         
         // Get chart data with both total and unique visits
-        $chartData = $this->trafficRepo->getVisitsByDayWithStats($startDate, $endDate, $selectedWebsite);
+        // For "Today" and "Yesterday" we'll get hourly data, for others we get daily data
+        if ($days != 1 && $days != 2) {
+            $chartData = $this->trafficRepo->getVisitsByDayWithStats($startDate, $endDate, $selectedWebsite);
+        }
         $labels = [];
         $totalValues = [];
         $uniqueValues = [];
-        for ($i = $days - 1; $i >= 0; $i--) {
-            $date = new DateTime("-{$i} days");
-            $dateStr = $date->format('Y-m-d');
-            $labels[] = $date->format('M j');
+        
+        // Handle chart data differently for calendar days vs rolling periods
+        if ($days == 1) {
+            // Today: show hourly breakdown
+            $chartData = $this->trafficRepo->getVisitsByHourWithStats($startDate, $endDate, $selectedWebsite);
             
-            $totalVisits = 0;
-            $uniqueVisits = 0;
-            foreach ($chartData as $row) {
-                if ($row['visit_date'] === $dateStr) {
-                    $totalVisits = (int) $row['total_visits'];
-                    $uniqueVisits = (int) $row['unique_visits'];
-                    break;
+            // Generate labels for all 24 hours
+            for ($hour = 0; $hour < 24; $hour++) {
+                $hourStr = sprintf('%02d:00', $hour);
+                $labels[] = $hourStr;
+                
+                $totalVisits = 0;
+                $uniqueVisits = 0;
+                
+                // Look for data for this hour
+                $targetHour = (new DateTime('today'))->format('Y-m-d') . ' ' . sprintf('%02d', $hour);
+                foreach ($chartData as $row) {
+                    if ($row['visit_hour'] === $targetHour) {
+                        $totalVisits = (int) $row['total_visits'];
+                        $uniqueVisits = (int) $row['unique_visits'];
+                        break;
+                    }
                 }
+                
+                $totalValues[] = $totalVisits;
+                $uniqueValues[] = $uniqueVisits;
             }
-            $totalValues[] = $totalVisits;
-            $uniqueValues[] = $uniqueVisits;
+        } elseif ($days == 2) {
+            // Yesterday: show hourly breakdown
+            $chartData = $this->trafficRepo->getVisitsByHourWithStats($startDate, $endDate, $selectedWebsite);
+            
+            // Generate labels for all 24 hours
+            for ($hour = 0; $hour < 24; $hour++) {
+                $hourStr = sprintf('%02d:00', $hour);
+                $labels[] = $hourStr;
+                
+                $totalVisits = 0;
+                $uniqueVisits = 0;
+                
+                // Look for data for this hour
+                $targetHour = (new DateTime('yesterday'))->format('Y-m-d') . ' ' . sprintf('%02d', $hour);
+                foreach ($chartData as $row) {
+                    if ($row['visit_hour'] === $targetHour) {
+                        $totalVisits = (int) $row['total_visits'];
+                        $uniqueVisits = (int) $row['unique_visits'];
+                        break;
+                    }
+                }
+                
+                $totalValues[] = $totalVisits;
+                $uniqueValues[] = $uniqueVisits;
+            }
+        } else {
+            // Rolling periods: show daily breakdown
+            for ($i = $days - 1; $i >= 0; $i--) {
+                $date = new DateTime("-{$i} days");
+                $dateStr = $date->format('Y-m-d');
+                $labels[] = $date->format('M j');
+                
+                $totalVisits = 0;
+                $uniqueVisits = 0;
+                foreach ($chartData as $row) {
+                    if ($row['visit_date'] === $dateStr) {
+                        $totalVisits = (int) $row['total_visits'];
+                        $uniqueVisits = (int) $row['unique_visits'];
+                        break;
+                    }
+                }
+                $totalValues[] = $totalVisits;
+                $uniqueValues[] = $uniqueVisits;
+            }
         }
         
         view('dashboard', [
@@ -96,7 +170,10 @@ class DashboardController {
             'selected_period' => $days
         ]);
     }
-    
+
+    /**
+     * Show chart data (AJAX endpoint)
+     */    
     public function chart() {
         $userId = $_SESSION['user_id'] ?? null;
         $user = $this->userRepo->find($userId);
@@ -120,8 +197,21 @@ class DashboardController {
 
         // Get data for the selected period (default: last 7 days)
         $days = $_GET['days'] ?? 7;
-        $endDate = new DateTime();
-        $startDate = new DateTime("-{$days} days");
+        
+        // Handle special cases for calendar days
+        if ($days == 1) {
+            // Today: from midnight to end of day
+            $startDate = new DateTime('today');
+            $endDate = new DateTime('tomorrow');
+        } elseif ($days == 2) {
+            // Yesterday: from yesterday midnight to yesterday end of day
+            $startDate = new DateTime('yesterday');
+            $endDate = new DateTime('today');
+        } else {
+            // Other periods: X days ago to now (rolling window)
+            $endDate = new DateTime();
+            $startDate = new DateTime("-{$days} days");
+        }
         
         $data = $this->trafficRepo->getUniqueVisitsByDay($startDate, $endDate, $selectedWebsite);
         
@@ -147,7 +237,10 @@ class DashboardController {
         
         view('dashboard.chart', ['labels' => $labels, 'values' => $values]);
     }
-    
+
+    /**
+     * Show data table (AJAX endpoint)
+     */
     public function table() {
         $userId = $_SESSION['user_id'] ?? null;
         $user = $this->userRepo->find($userId);
@@ -171,8 +264,21 @@ class DashboardController {
 
         // Get data for the selected time period (default: last 30 days)
         $days = $_GET['days'] ?? 30;
-        $endDate = new DateTime();
-        $startDate = new DateTime("-{$days} days");
+        
+        // Handle special cases for calendar days
+        if ($days == 1) {
+            // Today: from midnight to end of day
+            $startDate = new DateTime('today');
+            $endDate = new DateTime('tomorrow');
+        } elseif ($days == 2) {
+            // Yesterday: from yesterday midnight to yesterday end of day
+            $startDate = new DateTime('yesterday');
+            $endDate = new DateTime('today');
+        } else {
+            // Other periods: X days ago to now (rolling window)
+            $endDate = new DateTime();
+            $startDate = new DateTime("-{$days} days");
+        }
         
         $rows = $this->trafficRepo->getUniqueVisitsByPage($startDate, $endDate, $selectedWebsite);
         
@@ -184,6 +290,9 @@ class DashboardController {
         view('dashboard.table', ['rows' => $rows, 'period' => $days]);
     }
 
+    /**
+     * Show statistics page
+     */
     public function stats() {
         $userId = $_SESSION['user_id'] ?? null;
         $user = $this->userRepo->find($userId);
@@ -208,8 +317,21 @@ class DashboardController {
         // Get period from query params
         $days = $_GET['days'] ?? 30;
         $type = $_GET['type'] ?? 'all';
-        $endDate = new DateTime();
-        $startDate = new DateTime("-{$days} days");
+        
+        // Handle special cases for calendar days
+        if ($days == 1) {
+            // Today: from midnight to end of day
+            $startDate = new DateTime('today');
+            $endDate = new DateTime('tomorrow');
+        } elseif ($days == 2) {
+            // Yesterday: from yesterday midnight to yesterday end of day
+            $startDate = new DateTime('yesterday');
+            $endDate = new DateTime('today');
+        } else {
+            // Other periods: X days ago to now (rolling window)
+            $endDate = new DateTime();
+            $startDate = new DateTime("-{$days} days");
+        }
 
         // Get statistics
         $totalVisitors = $this->trafficRepo->getTotalUniqueVisitors($startDate, $endDate, $selectedWebsite);

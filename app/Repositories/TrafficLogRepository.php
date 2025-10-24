@@ -128,7 +128,7 @@ class TrafficLogRepository extends EntityRepository
     public function getUniqueVisitsByPage(DateTime $startDate, DateTime $endDate, ?Website $website = null): array
     {
         $qb = $this->createQueryBuilder('tl')
-            ->select('tl.page_url, COUNT(DISTINCT tl.session_hash) as unique_visits')
+            ->select('tl.page_url, COUNT(DISTINCT tl.ip_address) as unique_visits')
             ->where('tl.visited_at >= :startDate')
             ->andWhere('tl.visited_at <= :endDate')
             ->setParameter('startDate', $startDate)
@@ -151,7 +151,7 @@ class TrafficLogRepository extends EntityRepository
     {
         // First get all visits in the date range
         $qb = $this->createQueryBuilder('tl')
-            ->select('tl.visited_at, tl.session_hash')
+            ->select('tl.visited_at, tl.ip_address')
             ->where('tl.visited_at >= :startDate')
             ->andWhere('tl.visited_at <= :endDate')
             ->setParameter('startDate', $startDate)
@@ -164,22 +164,22 @@ class TrafficLogRepository extends EntityRepository
 
         $visits = $qb->getQuery()->getArrayResult();
         
-        // Group by date and count unique session hashes
+        // Group by date and count unique IP addresses
         $groupedVisits = [];
         foreach ($visits as $visit) {
             $date = $visit['visited_at']->format('Y-m-d');
             if (!isset($groupedVisits[$date])) {
                 $groupedVisits[$date] = [];
             }
-            $groupedVisits[$date][$visit['session_hash']] = true;
+            $groupedVisits[$date][$visit['ip_address']] = true;
         }
         
         // Convert to the expected format
         $result = [];
-        foreach ($groupedVisits as $date => $sessions) {
+        foreach ($groupedVisits as $date => $ipAddresses) {
             $result[] = [
                 'visit_date' => $date,
-                'unique_visits' => count($sessions)
+                'unique_visits' => count($ipAddresses)
             ];
         }
         
@@ -197,7 +197,7 @@ class TrafficLogRepository extends EntityRepository
     public function getTotalUniqueVisitors(DateTime $startDate, DateTime $endDate, ?Website $website = null): int
     {
         $qb = $this->createQueryBuilder('tl')
-            ->select('COUNT(DISTINCT tl.session_hash)')
+            ->select('COUNT(DISTINCT tl.ip_address)')
             ->where('tl.visited_at >= :startDate')
             ->andWhere('tl.visited_at <= :endDate')
             ->setParameter('startDate', $startDate)
@@ -217,7 +217,7 @@ class TrafficLogRepository extends EntityRepository
     public function getTopReferrers(DateTime $startDate, DateTime $endDate, int $limit = 10, ?Website $website = null): array
     {
         $qb = $this->createQueryBuilder('tl')
-            ->select('tl.referer, COUNT(DISTINCT tl.session_hash) as unique_visits')
+            ->select('tl.referer, COUNT(DISTINCT tl.ip_address) as unique_visits')
             ->where('tl.visited_at >= :startDate')
             ->andWhere('tl.visited_at <= :endDate')
             ->andWhere('tl.referer IS NOT NULL')
@@ -263,7 +263,7 @@ class TrafficLogRepository extends EntityRepository
     public function getVisitsByPageWithStats(DateTime $startDate, DateTime $endDate, ?Website $website = null): array
     {
         $qb = $this->createQueryBuilder('tl')
-            ->select('tl.page_url, COUNT(tl.id) as total_visits, COUNT(DISTINCT tl.session_hash) as unique_visits')
+            ->select('tl.page_url, COUNT(tl.id) as total_visits, COUNT(DISTINCT tl.ip_address) as unique_visits')
             ->where('tl.visited_at >= :startDate')
             ->andWhere('tl.visited_at <= :endDate')
             ->setParameter('startDate', $startDate)
@@ -286,7 +286,7 @@ class TrafficLogRepository extends EntityRepository
     {
         // Get all visits with date formatting
         $qb = $this->createQueryBuilder('tl')
-            ->select('tl.visited_at, tl.session_hash')
+            ->select('tl.visited_at, tl.ip_address')
             ->where('tl.visited_at >= :startDate')
             ->andWhere('tl.visited_at <= :endDate')
             ->setParameter('startDate', $startDate)
@@ -309,12 +309,12 @@ class TrafficLogRepository extends EntityRepository
                 $groupedResults[$date] = [
                     'visit_date' => $date,
                     'total_visits' => 0,
-                    'unique_sessions' => []
+                    'unique_ips' => []
                 ];
             }
             
             $groupedResults[$date]['total_visits']++;
-            $groupedResults[$date]['unique_sessions'][$result['session_hash']] = true;
+            $groupedResults[$date]['unique_ips'][$result['ip_address']] = true;
         }
         
         // Convert to final format
@@ -323,7 +323,58 @@ class TrafficLogRepository extends EntityRepository
             $finalResults[] = [
                 'visit_date' => $data['visit_date'],
                 'total_visits' => $data['total_visits'],
-                'unique_visits' => count($data['unique_sessions'])
+                'unique_visits' => count($data['unique_ips'])
+            ];
+        }
+        
+        return $finalResults;
+    }
+
+    /**
+     * Get visits by hour with both total and unique counts (for single day)
+     */
+    public function getVisitsByHourWithStats(DateTime $startDate, DateTime $endDate, ?Website $website = null): array
+    {
+        // Get all visits with datetime
+        $qb = $this->createQueryBuilder('tl')
+            ->select('tl.visited_at, tl.ip_address')
+            ->where('tl.visited_at >= :startDate')
+            ->andWhere('tl.visited_at <= :endDate')
+            ->setParameter('startDate', $startDate)
+            ->setParameter('endDate', $endDate)
+            ->orderBy('tl.visited_at', 'ASC');
+
+        if ($website) {
+            $qb->andWhere('tl.website = :website')
+               ->setParameter('website', $website);
+        }
+
+        $results = $qb->getQuery()->getArrayResult();
+        
+        // Group by hour in PHP
+        $groupedResults = [];
+        foreach ($results as $result) {
+            $hour = $result['visited_at']->format('Y-m-d H');
+            
+            if (!isset($groupedResults[$hour])) {
+                $groupedResults[$hour] = [
+                    'visit_hour' => $hour,
+                    'total_visits' => 0,
+                    'unique_ips' => []
+                ];
+            }
+            
+            $groupedResults[$hour]['total_visits']++;
+            $groupedResults[$hour]['unique_ips'][$result['ip_address']] = true;
+        }
+        
+        // Convert to final format
+        $finalResults = [];
+        foreach ($groupedResults as $data) {
+            $finalResults[] = [
+                'visit_hour' => $data['visit_hour'],
+                'total_visits' => $data['total_visits'],
+                'unique_visits' => count($data['unique_ips'])
             ];
         }
         
