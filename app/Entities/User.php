@@ -5,6 +5,10 @@ namespace App\Entities;
 use Doctrine\ORM\Mapping as ORM;
 use DateTime;
 
+/**
+ * Entity representing a user
+ */
+
 #[ORM\Entity]
 #[ORM\Table(name: 'users')]
 class User

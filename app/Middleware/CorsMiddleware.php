@@ -2,8 +2,14 @@
 
 namespace App\Middleware;
 
+/**
+ * Middleware to handle CORS for API routes
+ */
 class CorsMiddleware
 {
+    /**
+     * Handle CORS headers
+     */
     public static function handle()
     {
         // Get the origin from the request
@@ -11,7 +17,7 @@ class CorsMiddleware
         
         // For tracking API, we need to be more permissive to allow external websites
         // But we'll validate the API key in the controller for security
-        if (!empty($origin)) {
+        if ($origin !== '') {
             // Always allow the specific origin for tracking
             header("Access-Control-Allow-Origin: {$origin}");
         } else {

@@ -5,6 +5,9 @@ namespace App\Controllers;
 use App\Repositories\WebsiteRepository;
 use App\Repositories\UserRepository;
 
+/**
+ * Controller for managing websites
+ */
 class WebsiteController
 {
     private WebsiteRepository $websiteRepo;
@@ -72,7 +75,7 @@ class WebsiteController
         $domain = trim($_POST['domain'] ?? '');
 
         // Validation
-        if (empty($name) || empty($domain)) {
+        if ($name === '' || $domain === '') {
             http_response_code(400);
             echo json_encode(['success' => false, 'message' => 'Name and domain are required']);
             return;

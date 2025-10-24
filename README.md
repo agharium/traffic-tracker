@@ -14,28 +14,34 @@ A modern, privacy-focused website analytics solution built with PHP. Track websi
 
 ## 🛠️ Technology Stack
 
-- **Backend**: PHP 8+ with Flight Framework (micro-framework)
-- **Database**: MySQL with Doctrine ORM
+- **Backend**: PHP 8.2+ with Flight Framework (micro-framework)
+- **Database**: PostgreSQL with Doctrine ORM
 - **Frontend**: BladeOne Templates + DaisyUI + Tailwind CSS
 - **Charts**: Chart.js for data visualization
-- **Authentication**: Session-based with password hashing
+- **Authentication**: Session-based with bcrypt password hashing
 - **Architecture**: MVC pattern with Repository design
+- **Deployment**: Docker containerized with Apache
+- **Caching**: File-based and array adapters for Doctrine
 
 ## 📊 Dashboard Preview
 
 The dashboard provides comprehensive analytics including:
-- Total visits and unique visitors
-- Daily visit trends with dual-line charts
-- Most popular pages ranking
-- Tracking status monitoring
-- Time period filtering (7, 30, 90 days)
+- **Total visits and unique visitors** with real-time counts
+- **Hourly tracking** for Today and Yesterday periods  
+- **Daily visit trends** with dual-line charts for longer periods
+- **Most popular pages** ranking with visit percentages
+- **Website filtering** for multi-site management
+- **Responsive design** optimized for mobile and desktop
+- **Time period filtering**: Today, Yesterday, 7, 30, 90 days
+- **Interactive charts** with Chart.js visualization
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- PHP 8.0 or higher
-- MySQL 5.7 or higher
+- PHP 8.2 or higher
+- PostgreSQL 17
 - Composer
+- Docker (optional, for containerized deployment)
 
 ### Installation
 
@@ -51,11 +57,22 @@ The dashboard provides comprehensive analytics including:
    ```
 
 3. **Database setup**
+   
+   **For PostgreSQL (Production):**
    ```bash
-   # Create a MySQL database
+   # Create PostgreSQL database
+   createdb traffic_tracker
+   
+   # Run schema creation
+   php create-schema.php
+   ```
+   
+   **For MySQL (Development):**
+   ```bash
+   # Create MySQL database
    mysql -u root -p -e "CREATE DATABASE traffic_tracker;"
    
-   # Import the database schema
+   # Import schema if using MySQL
    mysql -u root -p traffic_tracker < database.sql
    ```
 
@@ -63,6 +80,12 @@ The dashboard provides comprehensive analytics including:
    ```bash
    cp .env.example .env
    # Edit .env with your database credentials
+   # For PostgreSQL (default):
+   # DB_HOST=127.0.0.1
+   # DB_PORT=5432
+   # DB_NAME=tracker
+   # DB_USER=tracker
+   # DB_PASS=trackerpassword
    ```
 
 5. **Start the development server**
@@ -70,13 +93,18 @@ The dashboard provides comprehensive analytics including:
    php -S localhost:8080 -t public
    ```
 
+**Alternative: Docker Deployment**
+```bash
+# Build and run with Docker
+docker build -t traffic-tracker .
+docker run -p 8080:8080 traffic-tracker
+```
+
 6. **Access the application**
    Open http://localhost:8080 in your browser
 
-### Default Admin Account
-- **Email**: admin@example.com
-- **Username**: admin
-- **Password**: admin
+### Initial Setup
+The application will guide you through creating your first admin account on first visit, or you can register normally through the interface.
 
 ## 📝 Usage
 
@@ -106,57 +134,121 @@ The script automatically tracks:
 ### Viewing Analytics
 
 1. Go to the Dashboard
-2. Select time period (7, 30, or 90 days)
-3. View metrics:
-   - Total visits vs unique visitors chart
-   - Top pages table with visit counts
-   - Traffic status indicators
+2. Select website (if multiple websites configured)
+3. Choose time period:
+   - **Today/Yesterday**: Shows hourly breakdown (24-hour view)
+   - **7/30/90 days**: Shows daily breakdown with trends
+4. View comprehensive metrics:
+   - **Real-time charts**: Total visits vs unique visitors
+   - **Top pages table**: Visit counts with percentages
+   - **Traffic insights**: Peak hours and visitor patterns
+   - **Website filtering**: Individual or combined analytics
 
 ## 🏗️ Architecture
 
 ### Directory Structure
 ```
 app/
-├── Controllers/        # Request handling logic
-├── Entities/          # Doctrine ORM entities
-├── Repositories/      # Data access layer
-├── Views/            # Blade templates
-│   ├── layouts/      # Base layouts
-│   └── partials/     # Reusable components
-└── Middleware/       # Authentication middleware
+├── Controllers/      # Request handling logic
+│   ├── AuthController.php
+│   ├── DashboardController.php
+│   ├── TrackingController.php
+│   └── WebsiteController.php
+├── Entities/         # Doctrine ORM entities  
+│   ├── User.php
+│   ├── Website.php
+│   └── TrafficLog.php
+├── Repositories/     # Data access layer
+├── Services/         # Business logic services
+├── Middleware/       # Authentication & CORS middleware
+└── Views/            # Blade templates
+    ├── layouts/      # Base layouts
+    ├── auth/         # Login/Register pages
+    ├── dashboard/    # Analytics components  
+    └── partials/     # Reusable components
+
+config/
+└── doctrine.php      # Database configuration
 
 public/
 └── index.php         # Application entry point
 
-database.sql          # Database schema and seed data
+storage/
+├── cache/            # Template and app cache
+└── doctrine/         # Doctrine proxy classes
+
+bootstrap.php         # Application bootstrap
+create-schema.php     # Database schema creation
+database.sql          # MySQL schema (fallback)
+Dockerfile            # Container configuration
 ```
 
 ### Key Components
 
-- **User Management**: Registration, login, password hashing
-- **Website Management**: CRUD operations for tracked websites
-- **Traffic Logging**: Efficient visit recording with session tracking
-- **Analytics Engine**: Statistical calculations for visitor insights
-- **API Endpoints**: RESTful API for tracking script delivery
+- **User Management**: Registration, login, bcrypt password hashing
+- **Website Management**: CRUD operations for tracked websites with API keys
+- **Traffic Logging**: Efficient visit recording with IP-based unique visitor detection
+- **Analytics Engine**: Real-time statistical calculations with hourly/daily aggregation
+- **API Endpoints**: RESTful API for tracking script delivery and data collection
+- **Responsive UI**: Mobile-first design with hamburger navigation and touch-friendly controls
+- **Chart Visualization**: Interactive Chart.js integration with dual-metric tracking
 
 ## 🔒 Privacy & Security
 
-- **No Personal Data**: Only tracks anonymous visit patterns
-- **Session-Based**: Uses temporary session identifiers
-- **Secure Authentication**: BCrypt password hashing
-- **CSRF Protection**: Form validation and user verification
+- **No Personal Data**: Only tracks anonymous visit patterns using IP addresses
+- **Privacy-First**: No cookies, no localStorage tracking of personal information
+- **Session-Based**: Uses temporary session identifiers for visit aggregation
+- **Secure Authentication**: BCrypt password hashing with session management
 - **API Key Security**: Unique keys per website for access control
+- **CORS Protection**: Properly configured cross-origin resource sharing
+- **Input Validation**: Comprehensive server-side validation and sanitization
+- **Docker Security**: Containerized deployment with proper permissions
 
 ## 🌟 Key Features Explained
 
-### Unique Visitor Tracking
-The system counts unique visitors per day using session-based identification, ensuring privacy while providing accurate metrics.
+### Intelligent Visitor Tracking
+The system counts unique visitors using IP address-based identification, providing accurate metrics while maintaining privacy. Supports both total visits and unique visitor differentiation.
 
-### Multi-Website Support
-Each user can manage multiple websites with separate API keys and independent analytics.
+### Advanced Time Period Analysis  
+- **Hourly Granularity**: Today and Yesterday show 24-hour breakdowns
+- **Daily Trends**: Longer periods display day-by-day analytics
+- **Flexible Filtering**: Easy switching between time ranges
 
-### Real-Time Dashboard
-Interactive charts update automatically, showing both total visits and unique visitor trends.
+### Multi-Website Dashboard
+Each user can manage multiple websites with separate API keys and independent analytics, all viewable from a unified dashboard with filtering capabilities.
 
-### Modern UI/UX
-Built with DaisyUI and Tailwind CSS for a beautiful, responsive interface that works on all devices.
+### Modern Responsive Interface
+Built with DaisyUI and Tailwind CSS featuring:
+- **Mobile-first design** with hamburger navigation
+- **Touch-friendly controls** with proper sizing
+- **Dark/light theme toggle** for user preference
+- **Interactive charts** with real-time data visualization
+- **Responsive tables** with horizontal scrolling on mobile
+
+### Production-Ready Deployment
+- **Docker containerization** for easy deployment
+- **PostgreSQL support** for production scalability  
+- **Environment-based configuration** for different deployment stages
+- **Optimized caching** with Doctrine and template systems
+
+## 🚀 Recent Improvements
+
+### Mobile Optimization
+- **Responsive Navigation**: Hamburger menu with touch-friendly controls
+- **Mobile Dashboard**: Optimized layouts with proper spacing and sizing
+- **Better UX**: Improved selectors, buttons, and form controls for mobile devices
+
+### Enhanced Analytics  
+- **Hourly Tracking**: Detailed hourly breakdowns for Today/Yesterday analysis
+- **Improved Charts**: Dual-metric visualization (total visits + unique visitors)
+- **Better Data Accuracy**: IP-based unique visitor detection for more reliable metrics
+
+### Modern PHP Implementation
+- **PHP 8.2+ Features**: Modern syntax with match expressions, str_contains(), and improved type safety
+- **Performance Optimizations**: Better array handling and string operations
+- **Code Quality**: Modernized codebase following current PHP best practices
+
+### Production Features
+- **Docker Support**: Full containerization with Apache and PHP 8.2
+- **PostgreSQL Integration**: Production-ready database configuration
+- **Environment Flexibility**: Support for both development (MySQL) and production (PostgreSQL) setups

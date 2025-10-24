@@ -168,7 +168,7 @@ class TrafficLogRepository extends EntityRepository
         $groupedVisits = [];
         foreach ($visits as $visit) {
             $date = $visit['visited_at']->format('Y-m-d');
-            if (!isset($groupedVisits[$date])) {
+            if (!array_key_exists($date, $groupedVisits)) {
                 $groupedVisits[$date] = [];
             }
             $groupedVisits[$date][$visit['ip_address']] = true;
@@ -305,7 +305,7 @@ class TrafficLogRepository extends EntityRepository
         foreach ($results as $result) {
             $date = $result['visited_at']->format('Y-m-d');
             
-            if (!isset($groupedResults[$date])) {
+            if (!array_key_exists($date, $groupedResults)) {
                 $groupedResults[$date] = [
                     'visit_date' => $date,
                     'total_visits' => 0,
@@ -356,7 +356,7 @@ class TrafficLogRepository extends EntityRepository
         foreach ($results as $result) {
             $hour = $result['visited_at']->format('Y-m-d H');
             
-            if (!isset($groupedResults[$hour])) {
+            if (!array_key_exists($hour, $groupedResults)) {
                 $groupedResults[$hour] = [
                     'visit_hour' => $hour,
                     'total_visits' => 0,

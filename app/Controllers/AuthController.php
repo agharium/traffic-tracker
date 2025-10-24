@@ -39,7 +39,7 @@ class AuthController
         $loginField = $_POST['login'] ?? ''; // Can be username or email
         $password = $_POST['password'] ?? '';
 
-        if (empty($loginField) || empty($password)) {
+        if ($loginField === '' || $password === '') {
             $error = 'Username/email and password are required';
             $view = is_hx() ? 'auth.partials.login' : 'auth.login';
             view($view, ['title' => 'Login', 'error' => $error]);
@@ -69,15 +69,15 @@ class AuthController
 
         $errors = [];
 
-        if (empty($email)) $errors[] = 'Email is required';
-        if (empty($username)) $errors[] = 'Username is required';
-        if (empty($password)) $errors[] = 'Password is required';
-        if (empty($name)) $errors[] = 'Name is required';
+        if ($email === '') $errors[] = 'Email is required';
+        if ($username === '') $errors[] = 'Username is required';
+        if ($password === '') $errors[] = 'Password is required';
+        if ($name === '') $errors[] = 'Name is required';
         if ($password !== $confirmPassword) $errors[] = 'Passwords do not match';
         if (strlen($password) < 6) $errors[] = 'Password must be at least 6 characters';
         if (strlen($username) < 3) $errors[] = 'Username must be at least 3 characters';
 
-        if (!empty($errors)) {
+        if ($errors !== []) {
             $view = is_hx() ? 'auth.partials.register' : 'auth.register';
             view($view, ['title' => 'Register', 'errors' => $errors]);
             return;

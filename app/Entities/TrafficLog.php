@@ -5,6 +5,10 @@ namespace App\Entities;
 use Doctrine\ORM\Mapping as ORM;
 use DateTime;
 
+/**
+ * Entity representing a traffic log entry
+ */
+
 #[ORM\Entity]
 #[ORM\Table(name: 'traffic_logs')]
 class TrafficLog

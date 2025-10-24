@@ -16,10 +16,10 @@ if (file_exists(__DIR__ . '/.env')) {
 date_default_timezone_set($_ENV['APP_TIMEZONE'] ?? 'America/Sao_Paulo');
 
 // Handle CORS for API routes before any routing
-if (strpos($_SERVER['REQUEST_URI'] ?? '', '/api/') !== false) {
+if (str_contains($_SERVER['REQUEST_URI'] ?? '', '/api/')) {
     $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
     
-    if (!empty($origin)) {
+    if ($origin !== '') {
         header("Access-Control-Allow-Origin: {$origin}");
     } else {
         header("Access-Control-Allow-Origin: *");

@@ -22,6 +22,9 @@ class DashboardController {
         $this->userRepo = new UserRepository($em);
     }
 
+    /**
+     * Show the dashboard page
+     */
     public function index() {
         $userId = $_SESSION['user_id'] ?? null;
         $user = $this->userRepo->find($userId);
@@ -346,19 +349,12 @@ class DashboardController {
         ];
 
         // Return specific stat component based on type
-        switch ($type) {
-            case 'visitors':
-                view('dashboard.visitors', $data);
-                break;
-            case 'popular':
-                view('dashboard.popular', $data);
-                break;
-            case 'status':
-                view('dashboard.status', $data);
-                break;
-            default:
-                view('dashboard.stats', $data);
-                break;
-        }
+        $template = match ($type) {
+            'visitors' => 'dashboard.visitors',
+            'popular' => 'dashboard.popular',
+            'status' => 'dashboard.status',
+            default => 'dashboard.stats'
+        };
+        view($template, $data);
     }
 }

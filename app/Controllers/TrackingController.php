@@ -3,7 +3,6 @@
 namespace App\Controllers;
 
 use App\Repositories\TrafficLogRepository;
-use DateTime;
 
 /**
  * Controller for handling tracking-related API endpoints
@@ -80,7 +79,7 @@ class TrackingController
         
         // Force HTTPS for production (Render always uses HTTPS)
         // Use current protocol for local development
-        $isProduction = strpos($_SERVER['HTTP_HOST'], 'onrender.com') !== false;
+        $isProduction = str_contains($_SERVER['HTTP_HOST'], 'onrender.com');
         $protocol = $isProduction ? 'https' : 'http' . ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 's' : '');
         $baseUrl = $protocol . '://' . $_SERVER['HTTP_HOST'];
 
@@ -222,7 +221,7 @@ class TrackingController
         }
         
         // Extract the first IP from comma-separated list (for Cloudflare/proxy chains)
-        if (strpos($ip, ',') !== false) {
+        if (str_contains($ip, ',')) {
             $ip = trim(explode(',', $ip)[0]);
         }
         

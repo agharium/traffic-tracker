@@ -5,8 +5,14 @@ namespace App\Middleware;
 use App\Services\AuthService;
 use Flight;
 
+/**
+ * Middleware to handle authentication checks
+ */
 class AuthMiddleware
 {
+    /**
+     * Require the user to be authenticated
+     */
     public static function requireAuth(): void
     {
         $auth = new AuthService();
@@ -23,6 +29,9 @@ class AuthMiddleware
         }
     }
 
+    /**
+     * Require the user to be a guest (not authenticated)
+     */
     public static function requireGuest(): void
     {
         $auth = new AuthService();
