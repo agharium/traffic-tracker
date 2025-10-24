@@ -123,12 +123,53 @@
 
   <div id="flash"></div>
 
-  @if(isset($_SERVER['HTTP_HOST']) && strpos($_SERVER['HTTP_HOST'], 'localhost') === false)
-    {{-- Only load tracking script in production --}}
-    <script src="https://traffic-tracker-t18u.onrender.com/api/tracking-script?key=tk_eb0aae23640af952f00018c4d438f9326aad9adb5c0069bfe43a4a42"></script>
-  @else
-    {{-- For localhost development, use local tracking script --}}
-    <script src="http://localhost:8080/api/tracking-script?key=local_dev_key"></script>
-  @endif
+  <script>
+  // Global form loading functionality
+  document.addEventListener('DOMContentLoaded', function() {
+    // Add loading state to all forms with hx-post, hx-put, etc.
+    document.addEventListener('htmx:beforeRequest', function(event) {
+      const form = event.target.closest('form');
+      if (form) {
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) {
+          // Store original text
+          submitBtn.dataset.originalText = submitBtn.innerHTML;
+          // Add loading state
+          submitBtn.innerHTML = '<span class="loading loading-spinner loading-sm"></span> Loading...';
+          submitBtn.disabled = true;
+        }
+      }
+    });
+
+    // Reset button state after request
+    document.addEventListener('htmx:afterRequest', function(event) {
+      const form = event.target.closest('form');
+      if (form) {
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn && submitBtn.dataset.originalText) {
+          // Restore original text
+          submitBtn.innerHTML = submitBtn.dataset.originalText;
+          submitBtn.disabled = false;
+        }
+      }
+    });
+
+    // Also handle regular form submissions (non-HTMX)
+    document.addEventListener('submit', function(event) {
+      const form = event.target;
+      if (form && !form.hasAttribute('hx-post') && !form.hasAttribute('hx-put') && !form.hasAttribute('hx-patch')) {
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) {
+          setTimeout(() => {
+            submitBtn.dataset.originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<span class="loading loading-spinner loading-sm"></span> Loading...';
+            submitBtn.disabled = true;
+          }, 10);
+        }
+      }
+    });
+  });
+  </script>
+  <script src="//traffic-tracker-t18u.onrender.com/api/tracking-script?key=tk_18e501c80b98cf747262d380321c10c22918e923203a5817f05cd86d"></script>
 </body>
 </html>

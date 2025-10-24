@@ -188,6 +188,13 @@ function confirmAction() {
 function addWebsite(event) {
     event.preventDefault();
     
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    
+    // Show loading state
+    submitBtn.innerHTML = '<span class="loading loading-spinner loading-sm"></span> Adding...';
+    submitBtn.disabled = true;
+    
     const formData = new FormData(event.target);
     formData.append('ajax', '1');
     
@@ -207,6 +214,11 @@ function addWebsite(event) {
     })
     .catch(error => {
         showToast('Error: ' + error.message, 'error');
+    })
+    .finally(() => {
+        // Reset button state
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
     });
 }
 
@@ -237,6 +249,16 @@ function regenerateApiKey(websiteId) {
 }
 
 function performRegenerateApiKey(websiteId) {
+    // Find and update all regenerate buttons for this website
+    const regenerateBtn = document.querySelector(`button[onclick="regenerateApiKey(${websiteId})"]`);
+    let originalText = '';
+    
+    if (regenerateBtn) {
+        originalText = regenerateBtn.innerHTML;
+        regenerateBtn.innerHTML = '<span class="loading loading-spinner loading-sm"></span> Regenerating...';
+        regenerateBtn.disabled = true;
+    }
+    
     const formData = new FormData();
     formData.append('website_id', websiteId);
     
@@ -255,6 +277,13 @@ function performRegenerateApiKey(websiteId) {
     })
     .catch(error => {
         showToast('Error: ' + error.message, 'error');
+    })
+    .finally(() => {
+        // Reset button state
+        if (regenerateBtn) {
+            regenerateBtn.innerHTML = originalText;
+            regenerateBtn.disabled = false;
+        }
     });
 }
 
@@ -268,6 +297,16 @@ function deleteWebsite(websiteId) {
 }
 
 function performDeleteWebsite(websiteId) {
+    // Find and update the delete button for this website
+    const deleteBtn = document.querySelector(`button[onclick="deleteWebsite(${websiteId})"]`);
+    let originalText = '';
+    
+    if (deleteBtn) {
+        originalText = deleteBtn.innerHTML;
+        deleteBtn.innerHTML = '<span class="loading loading-spinner loading-sm"></span> Deleting...';
+        deleteBtn.disabled = true;
+    }
+    
     const formData = new FormData();
     formData.append('website_id', websiteId);
     
@@ -286,6 +325,13 @@ function performDeleteWebsite(websiteId) {
     })
     .catch(error => {
         showToast('Error: ' + error.message, 'error');
+    })
+    .finally(() => {
+        // Reset button state (if not deleted)
+        if (deleteBtn && document.body.contains(deleteBtn)) {
+            deleteBtn.innerHTML = originalText;
+            deleteBtn.disabled = false;
+        }
     });
 }
 
