@@ -203,19 +203,26 @@ class TrackingController
     private function getRealIpAddr(): string
     {
         if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
-            return $_SERVER['HTTP_CLIENT_IP'];
+            $ip = $_SERVER['HTTP_CLIENT_IP'];
         } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-            return $_SERVER['HTTP_X_FORWARDED_FOR'];
+            $ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
         } elseif (!empty($_SERVER['HTTP_X_FORWARDED'])) {
-            return $_SERVER['HTTP_X_FORWARDED'];
+            $ip = $_SERVER['HTTP_X_FORWARDED'];
         } elseif (!empty($_SERVER['HTTP_FORWARDED_FOR'])) {
-            return $_SERVER['HTTP_FORWARDED_FOR'];
+            $ip = $_SERVER['HTTP_FORWARDED_FOR'];
         } elseif (!empty($_SERVER['HTTP_FORWARDED'])) {
-            return $_SERVER['HTTP_FORWARDED'];
+            $ip = $_SERVER['HTTP_FORWARDED'];
         } elseif (!empty($_SERVER['REMOTE_ADDR'])) {
-            return $_SERVER['REMOTE_ADDR'];
+            $ip = $_SERVER['REMOTE_ADDR'];
+        } else {
+            return '0.0.0.0';
         }
         
-        return '0.0.0.0';
+        // Extract the first IP from comma-separated list (for Cloudflare/proxy chains)
+        if (strpos($ip, ',') !== false) {
+            $ip = trim(explode(',', $ip)[0]);
+        }
+        
+        return $ip;
     }
 }

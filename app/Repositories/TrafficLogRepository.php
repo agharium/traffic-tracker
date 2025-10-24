@@ -20,8 +20,9 @@ class TrafficLogRepository extends EntityRepository
      */
     public function logVisit(Website $website, string $ipAddress, string $pageUrl, ?string $userAgent = null, ?string $referer = null, ?string $clientId = null): bool
     {
-        // Generate session hash for uniqueness detection
-        $sessionHash = hash('sha256', $ipAddress . ($userAgent ?? '') . date('Y-m-d'));
+        // Generate session hash for uniqueness detection (use only first IP to handle proxy chains)
+        $cleanIpAddress = $this->extractFirstIp($ipAddress);
+        $sessionHash = hash('sha256', $cleanIpAddress . ($userAgent ?? '') . date('Y-m-d'));
         
         // Check if this unique visitor already visited this page today
         $today = new DateTime();
@@ -97,8 +98,9 @@ class TrafficLogRepository extends EntityRepository
             throw new \Exception('No website found for tracking');
         }
 
-        // Generate session hash for uniqueness calculation later
-        $sessionHash = hash('sha256', $ipAddress . ($userAgent ?? '') . date('Y-m-d'));
+        // Generate session hash for uniqueness calculation later (use only first IP to handle proxy chains)
+        $cleanIpAddress = $this->extractFirstIp($ipAddress);
+        $sessionHash = hash('sha256', $cleanIpAddress . ($userAgent ?? '') . date('Y-m-d'));
         
         // Create new visit log - log every visit
         $log = new TrafficLog();
@@ -328,5 +330,16 @@ class TrafficLogRepository extends EntityRepository
         }
         
         return $finalResults;
+    }
+
+    /**
+     * Extract the first IP from a comma-separated IP list (for proxy chains like Cloudflare)
+     */
+    private function extractFirstIp(string $ipAddress): string
+    {
+        if (strpos($ipAddress, ',') !== false) {
+            return trim(explode(',', $ipAddress)[0]);
+        }
+        return $ipAddress;
     }
 }
