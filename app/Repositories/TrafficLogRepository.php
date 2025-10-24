@@ -20,9 +20,8 @@ class TrafficLogRepository extends EntityRepository
      */
     public function logVisit(Website $website, string $ipAddress, string $pageUrl, ?string $userAgent = null, ?string $referer = null, ?string $clientId = null): bool
     {
-        // Generate session hash for uniqueness detection (use only first IP to handle proxy chains)
-        $cleanIpAddress = $this->extractFirstIp($ipAddress);
-        $sessionHash = hash('sha256', $cleanIpAddress . ($userAgent ?? '') . date('Y-m-d'));
+        // Generate session hash for uniqueness detection (use stable hash for mobile devices)
+        $sessionHash = $this->generateSessionHash($ipAddress, $userAgent);
         
         // Check if this unique visitor already visited this page today
         $today = new DateTime();
@@ -98,9 +97,8 @@ class TrafficLogRepository extends EntityRepository
             throw new \Exception('No website found for tracking');
         }
 
-        // Generate session hash for uniqueness calculation later (use only first IP to handle proxy chains)
-        $cleanIpAddress = $this->extractFirstIp($ipAddress);
-        $sessionHash = hash('sha256', $cleanIpAddress . ($userAgent ?? '') . date('Y-m-d'));
+        // Generate session hash for uniqueness calculation later (use stable hash for mobile devices)
+        $sessionHash = $this->generateSessionHash($ipAddress, $userAgent);
         
         // Create new visit log - log every visit
         $log = new TrafficLog();
@@ -341,5 +339,44 @@ class TrafficLogRepository extends EntityRepository
             return trim(explode(',', $ipAddress)[0]);
         }
         return $ipAddress;
+    }
+
+    /**
+     * Generate a stable session hash that handles mobile network switching
+     */
+    private function generateSessionHash(string $ipAddress, ?string $userAgent): string
+    {
+        $cleanIp = $this->extractFirstIp($ipAddress);
+        $date = date('Y-m-d');
+        
+        // For mobile devices, use a more stable identifier
+        if ($userAgent && $this->isMobileDevice($userAgent)) {
+            // For mobile: use only user agent + date (ignore IP completely)
+            // Mobile devices often switch IPs frequently due to network changes
+            return hash('sha256', $userAgent . $date . 'mobile');
+        }
+        
+        // For desktop: use exact IP as before
+        return hash('sha256', $cleanIp . ($userAgent ?? '') . $date);
+    }
+
+    /**
+     * Check if user agent indicates a mobile device
+     */
+    private function isMobileDevice(?string $userAgent): bool
+    {
+        if (!$userAgent) {
+            return false;
+        }
+        
+        $mobileIndicators = ['iPhone', 'iPad', 'Android', 'Mobile', 'Tablet', 'BlackBerry', 'Windows Phone'];
+        
+        foreach ($mobileIndicators as $indicator) {
+            if (stripos($userAgent, $indicator) !== false) {
+                return true;
+            }
+        }
+        
+        return false;
     }
 }
