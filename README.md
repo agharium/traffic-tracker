@@ -16,7 +16,7 @@ A modern, privacy-focused website analytics solution built with PHP. Track websi
 
 - **Backend**: PHP 8.2+ with Flight Framework (micro-framework)
 - **Database**: PostgreSQL with Doctrine ORM
-- **Frontend**: BladeOne Templates + DaisyUI + Tailwind CSS
+- **Frontend**: BladeOne Templates + DaisyUI + Tailwind CSS + HTMX
 - **Charts**: Chart.js for data visualization
 - **Authentication**: Session-based with bcrypt password hashing
 - **Architecture**: MVC pattern with Repository design
