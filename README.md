@@ -2,6 +2,8 @@
 
 A modern, privacy-focused website analytics solution built with PHP. Track website visitors without compromising user privacy - no cookies, no personal data collection, just essential metrics.
 
+Hosted on Render: https://traffic-tracker-t18u.onrender.com/
+
 ## 🚀 Features
 
 - **Privacy-First Analytics**: Track unique visitors without storing personal data
@@ -34,6 +36,8 @@ The dashboard provides comprehensive analytics including:
 - **Responsive design** optimized for mobile and desktop
 - **Time period filtering**: Today, Yesterday, 7, 30, 90 days
 - **Interactive charts** with Chart.js visualization
+
+<img width="1918" height="811" alt="image" src="https://github.com/user-attachments/assets/e5e11f34-4de7-4949-84a0-4ed0f6b10af6" />
 
 ## 🚀 Quick Start
 
