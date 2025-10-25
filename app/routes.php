@@ -5,6 +5,7 @@ use App\Controllers\AuthController;
 use App\Middleware\AuthMiddleware;
 use App\Controllers\TrackingController;
 use App\Middleware\CorsMiddleware;
+use App\Controllers\WebsiteController;
 
 // Start session for authentication
 if (session_status() === PHP_SESSION_NONE) {
@@ -36,25 +37,25 @@ Flight::route('GET /dashboard', function() {
 // Website management routes
 Flight::route('GET /websites', function() {
     AuthMiddleware::requireAuth();
-    $controller = new \App\Controllers\WebsiteController();
+    $controller = new WebsiteController();
     $controller->index();
 });
 
 Flight::route('POST /websites', function() {
     AuthMiddleware::requireAuth();
-    $controller = new \App\Controllers\WebsiteController();
+    $controller = new WebsiteController();
     $controller->store();
 });
 
 Flight::route('POST /websites/regenerate-key', function() {
     AuthMiddleware::requireAuth();
-    $controller = new \App\Controllers\WebsiteController();
+    $controller = new WebsiteController();
     $controller->regenerateApiKey();
 });
 
 Flight::route('POST /websites/delete', function() {
     AuthMiddleware::requireAuth();
-    $controller = new \App\Controllers\WebsiteController();
+    $controller = new WebsiteController();
     $controller->delete();
 });
 
