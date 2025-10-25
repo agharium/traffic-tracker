@@ -8,6 +8,9 @@ use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use DateTime;
 
+/**
+ * Repository for managing TrafficLog entities
+ */
 class TrafficLogRepository extends EntityRepository
 {
     public function __construct(EntityManagerInterface $em)

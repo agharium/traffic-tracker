@@ -174,32 +174,6 @@ class TrackingController
     }
 
     /**
-     * Test endpoint to debug tracking issues
-     * GET /api/test-track
-     */
-    public function testTrack()
-    {
-        header('Content-Type: application/json');
-        
-        try {
-            $apiKey = 'tk_eb0aae23640af952f00018c4d438f9326aad9adb5c0069bfe43a4a42';
-            
-            echo json_encode([
-                'success' => true,
-                'message' => 'Test endpoint working',
-                'api_key' => $apiKey,
-                'timestamp' => date('Y-m-d H:i:s')
-            ]);
-            
-        } catch (\Exception $e) {
-            echo json_encode([
-                'success' => false,
-                'error' => $e->getMessage()
-            ]);
-        }
-    }
-
-    /**
      * Get real IP address (handles proxies)
      */
     private function getRealIpAddr(): string

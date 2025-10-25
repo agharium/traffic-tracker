@@ -51,7 +51,7 @@ class DashboardController {
         }
         
         // Load all data at once
-        $days = $_GET['days'] ?? 1; // Changed default to 1 (Today)
+        $days = $_GET['days'] ?? 1;
         
         // Handle special cases for calendar days
         if ($days == 1) {

@@ -7,6 +7,9 @@ use App\Entities\User;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
+/**
+ * Repository for managing Website entities
+ */
 class WebsiteRepository extends EntityRepository
 {
     private EntityManagerInterface $entityManager;

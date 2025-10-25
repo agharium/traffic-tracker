@@ -10,7 +10,6 @@ use DateTime;
 /**
  * Entity representing a website
  */
-
 #[ORM\Entity]
 #[ORM\Table(name: 'websites')]
 class Website

@@ -5,6 +5,9 @@ namespace App\Services;
 use App\Entities\User;
 use App\Repositories\UserRepository;
 
+/**
+ * Service for handling authentication
+ */
 class AuthService
 {
     private UserRepository $userRepository;

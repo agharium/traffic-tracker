@@ -6,6 +6,9 @@ use App\Entities\User;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
+/**
+ * Repository for managing User entities
+ */
 class UserRepository extends EntityRepository
 {
     public function __construct(EntityManagerInterface $em)
