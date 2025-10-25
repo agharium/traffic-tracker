@@ -93,21 +93,21 @@ class DashboardController {
                 $hourStr = sprintf('%02d:00', $hour);
                 $labels[] = $hourStr;
                 
-                $totalVisits = 0;
-                $uniqueVisits = 0;
+                $hourlyTotalVisits = 0;
+                $hourlyUniqueVisits = 0;
                 
                 // Look for data for this hour
                 $targetHour = (new DateTime('today'))->format('Y-m-d') . ' ' . sprintf('%02d', $hour);
                 foreach ($chartData as $row) {
                     if ($row['visit_hour'] === $targetHour) {
-                        $totalVisits = (int) $row['total_visits'];
-                        $uniqueVisits = (int) $row['unique_visits'];
+                        $hourlyTotalVisits = (int) $row['total_visits'];
+                        $hourlyUniqueVisits = (int) $row['unique_visits'];
                         break;
                     }
                 }
                 
-                $totalValues[] = $totalVisits;
-                $uniqueValues[] = $uniqueVisits;
+                $totalValues[] = $hourlyTotalVisits;
+                $uniqueValues[] = $hourlyUniqueVisits;
             }
         } elseif ($days == 2) {
             // Yesterday: show hourly breakdown
@@ -118,21 +118,21 @@ class DashboardController {
                 $hourStr = sprintf('%02d:00', $hour);
                 $labels[] = $hourStr;
                 
-                $totalVisits = 0;
-                $uniqueVisits = 0;
+                $hourlyTotalVisits = 0;
+                $hourlyUniqueVisits = 0;
                 
                 // Look for data for this hour
                 $targetHour = (new DateTime('yesterday'))->format('Y-m-d') . ' ' . sprintf('%02d', $hour);
                 foreach ($chartData as $row) {
                     if ($row['visit_hour'] === $targetHour) {
-                        $totalVisits = (int) $row['total_visits'];
-                        $uniqueVisits = (int) $row['unique_visits'];
+                        $hourlyTotalVisits = (int) $row['total_visits'];
+                        $hourlyUniqueVisits = (int) $row['unique_visits'];
                         break;
                     }
                 }
                 
-                $totalValues[] = $totalVisits;
-                $uniqueValues[] = $uniqueVisits;
+                $totalValues[] = $hourlyTotalVisits;
+                $uniqueValues[] = $hourlyUniqueVisits;
             }
         } else {
             // Rolling periods: show daily breakdown
@@ -141,17 +141,17 @@ class DashboardController {
                 $dateStr = $date->format('Y-m-d');
                 $labels[] = $date->format('M j');
                 
-                $totalVisits = 0;
-                $uniqueVisits = 0;
+                $dailyTotalVisits = 0;
+                $dailyUniqueVisits = 0;
                 foreach ($chartData as $row) {
                     if ($row['visit_date'] === $dateStr) {
-                        $totalVisits = (int) $row['total_visits'];
-                        $uniqueVisits = (int) $row['unique_visits'];
+                        $dailyTotalVisits = (int) $row['total_visits'];
+                        $dailyUniqueVisits = (int) $row['unique_visits'];
                         break;
                     }
                 }
-                $totalValues[] = $totalVisits;
-                $uniqueValues[] = $uniqueVisits;
+                $totalValues[] = $dailyTotalVisits;
+                $uniqueValues[] = $dailyUniqueVisits;
             }
         }
         
